@@ -26,7 +26,26 @@ import {
   ChainOfThoughtStep,
 } from "@/components/ai-elements/chain-of-thought";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { BrainIcon } from "lucide-react";
+import { BrainIcon, ShuffleIcon } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Starter questions — random one selected on each page load
+// ---------------------------------------------------------------------------
+
+const STARTER_QUESTIONS = [
+  "Why do stars twinkle but planets don't?",
+  "How do octopuses change color instantly if they're colorblind?",
+  "Why does time feel slower when you're bored but flies when you're having fun?",
+  "What would happen to Earth if the Moon suddenly disappeared?",
+  "Why is the deep ocean dark even though water is transparent?",
+];
+
+function pickRandom(current?: string) {
+  const pool = current
+    ? STARTER_QUESTIONS.filter((q) => q !== current)
+    : STARTER_QUESTIONS;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
 
 // ---------------------------------------------------------------------------
 // CoT response parser — splits streaming text into thinking steps + answer
@@ -84,9 +103,7 @@ type ToolDemoResponse = {
 
 export default function PromptPatternsPage() {
   // -- Comparison state --
-  const [question, setQuestion] = useState(
-    "Why do stars twinkle but planets don't?"
-  );
+  const [question, setQuestion] = useState(() => pickRandom());
 
   const zeroShot = useChat({ id: "zero-shot", transport: zeroShotTransport });
   const fewShot = useChat({ id: "few-shot", transport: fewShotTransport });
@@ -208,13 +225,27 @@ export default function PromptPatternsPage() {
                     placeholder="Enter a question to compare across all three prompt patterns…"
                     className="min-h-[96px] resize-y text-base leading-relaxed"
                   />
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={isAnyRunning || !question.trim()}
-                  >
-                    {isAnyRunning ? "Running…" : "Run comparison"}
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="submit"
+                      size="lg"
+                      disabled={isAnyRunning || !question.trim()}
+                      className="w-auto"
+                    >
+                      {isAnyRunning ? "Running…" : "Run comparison"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      disabled={isAnyRunning}
+                      onClick={() => setQuestion(pickRandom(question))}
+                      className="w-auto gap-2"
+                    >
+                      <ShuffleIcon className="size-4" />
+                      New question
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>

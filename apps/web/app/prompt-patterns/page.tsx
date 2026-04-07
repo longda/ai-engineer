@@ -26,7 +26,7 @@ type ToolDemoResponse = {
 
 export default function PromptPatternsPage() {
   const [comparisonPrompt, setComparisonPrompt] = useState(
-    "What are practical ways to improve focus while learning TypeScript?"
+    "Why do stars twinkle but planets don't?"
   );
   const [toolPrompt, setToolPrompt] = useState(
     "Count the words in this sentence and then multiply the count by 2: I love building AI features with TypeScript."

@@ -19,7 +19,36 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
+import {
+  ChainOfThought,
+  ChainOfThoughtContent,
+  ChainOfThoughtHeader,
+  ChainOfThoughtStep,
+} from "@/components/ai-elements/chain-of-thought";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { BrainIcon } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// CoT response parser — splits streaming text into thinking steps + answer
+// ---------------------------------------------------------------------------
+
+function parseCotResponse(text: string) {
+  const thinkingMatch = text.match(
+    /\*\*Thinking\*\*\s*([\s\S]*?)(?:\*\*Answer\*\*|$)/
+  );
+  const answerMatch = text.match(/\*\*Answer\*\*\s*([\s\S]*)/);
+
+  const thinkingText = thinkingMatch?.[1]?.trim() ?? "";
+  const answerText = answerMatch?.[1]?.trim() ?? "";
+
+  const steps = thinkingText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^\d+\./.test(line))
+    .map((line) => line.replace(/^\d+\.\s*/, ""));
+
+  return { steps, answerText, hasAnswer: !!answerMatch };
+}
 
 // ---------------------------------------------------------------------------
 // Transports — one per prompt pattern, created at module scope
@@ -198,6 +227,7 @@ export default function PromptPatternsPage() {
                 const hasContent = assistantMessages.length > 0;
                 const isLoading = chat.status === "submitted";
                 const isStreaming = chat.status === "streaming";
+                const isCot = label === "Chain-of-thought";
 
                 return (
                   <Card
@@ -218,7 +248,63 @@ export default function PromptPatternsPage() {
                           Thinking…
                         </Shimmer>
                       )}
-                      {hasContent &&
+
+                      {/* --- CoT lane: ChainOfThought + answer --- */}
+                      {isCot && hasContent &&
+                        assistantMessages.map((message) => {
+                          const fullText = message.parts
+                            .filter((p) => p.type === "text")
+                            .map((p) => (p as { type: "text"; text: string }).text)
+                            .join("");
+                          const { steps, answerText, hasAnswer } =
+                            parseCotResponse(fullText);
+
+                          return (
+                            <div
+                              key={message.id}
+                              className="flex flex-col gap-3"
+                            >
+                              {steps.length > 0 && (
+                                <ChainOfThought defaultOpen>
+                                  <ChainOfThoughtHeader>
+                                    Reasoning
+                                  </ChainOfThoughtHeader>
+                                  <ChainOfThoughtContent>
+                                    {steps.map((step, i) => (
+                                      <ChainOfThoughtStep
+                                        key={i}
+                                        icon={BrainIcon}
+                                        label={step}
+                                        status={
+                                          hasAnswer
+                                            ? "complete"
+                                            : i === steps.length - 1
+                                              ? "active"
+                                              : "complete"
+                                        }
+                                      />
+                                    ))}
+                                  </ChainOfThoughtContent>
+                                </ChainOfThought>
+                              )}
+                              {answerText && (
+                                <Message
+                                  from="assistant"
+                                  className="max-w-full"
+                                >
+                                  <MessageContent>
+                                    <MessageResponse>
+                                      {answerText}
+                                    </MessageResponse>
+                                  </MessageContent>
+                                </Message>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                      {/* --- Zero-shot / Few-shot lanes: plain response --- */}
+                      {!isCot && hasContent &&
                         assistantMessages.map((message) => (
                           <Message
                             from="assistant"
@@ -238,6 +324,7 @@ export default function PromptPatternsPage() {
                             </MessageContent>
                           </Message>
                         ))}
+
                       {chat.error && (
                         <p className="text-sm text-destructive">
                           {chat.error.message}

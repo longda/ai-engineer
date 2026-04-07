@@ -34,10 +34,10 @@ import { BrainIcon, ShuffleIcon } from "lucide-react";
 
 const STARTER_QUESTIONS = [
   "Why do stars twinkle but planets don't?",
-  "How do octopuses change color instantly if they're colorblind?",
-  "Why does time feel slower when you're bored but flies when you're having fun?",
   "What would happen to Earth if the Moon suddenly disappeared?",
-  "Why is the deep ocean dark even though water is transparent?",
+  "How can a black hole bend time itself?",
+  "Why do neutron stars spin hundreds of times per second?",
+  "What makes the cosmic microwave background the oldest light we can see?",
 ];
 
 function pickRandom(current?: string) {
@@ -223,7 +223,7 @@ export default function PromptPatternsPage() {
                     onChange={(e) => setQuestion(e.target.value)}
                     rows={3}
                     placeholder="Enter a question to compare across all three prompt patterns…"
-                    className="min-h-[96px] resize-y text-base leading-relaxed"
+                    className="min-h-24 resize-y text-base leading-relaxed"
                   />
                   <div className="flex items-center gap-3">
                     <Button
@@ -273,7 +273,7 @@ export default function PromptPatternsPage() {
                         )}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="min-h-[120px] pt-0">
+                    <CardContent className="min-h-30 pt-0">
                       {isLoading && (
                         <Shimmer className="text-sm text-muted-foreground">
                           Thinking…
@@ -397,7 +397,7 @@ export default function PromptPatternsPage() {
                   </h3>
                   <Card className="border-0 bg-stone-100 shadow-none ring-0">
                     <CardContent className="pt-6">
-                      <pre className="font-sans text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      <pre className="font-sans text-sm leading-relaxed whitespace-pre-wrap wrap-break-word">
                         {toolResult.answer}
                       </pre>
                     </CardContent>

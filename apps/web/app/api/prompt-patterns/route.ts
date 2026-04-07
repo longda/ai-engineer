@@ -1,35 +1,30 @@
-import { generateText } from "ai";
-import { zeroShot, fewShot, chainOfThought } from "./prompts";
+import { streamText, UIMessage, convertToModelMessages } from "ai";
+import { SYSTEM_PROMPTS, type PromptPattern } from "./prompts";
 
 const MODEL_ID = "openai/gpt-5.4-mini";
 
-export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as { prompt?: string };
-    const userPrompt = body.prompt?.trim();
+export const maxDuration = 30;
 
-    if (!userPrompt) {
-      return Response.json({ error: "Prompt is required." }, { status: 400 });
-    }
+export async function POST(req: Request) {
+  const {
+    messages,
+    pattern,
+  }: { messages: UIMessage[]; pattern: PromptPattern } = await req.json();
 
-    const [zeroShotResult, fewShotResult, cotResult] = await Promise.all([
-      generateText({ model: MODEL_ID, ...zeroShot(userPrompt) }),
-      generateText({ model: MODEL_ID, ...fewShot(userPrompt) }),
-      generateText({ model: MODEL_ID, ...chainOfThought(userPrompt) }),
-    ]);
+  const system = SYSTEM_PROMPTS[pattern];
 
-    return Response.json({
-      zeroShot: zeroShotResult.text,
-      fewShot: fewShotResult.text,
-      chainOfThought: cotResult.text,
-    });
-  } catch {
+  if (!system) {
     return Response.json(
-      {
-        error:
-          "Failed to generate prompt comparison output. Check AI Gateway configuration.",
-      },
-      { status: 500 }
+      { error: `Invalid pattern: ${pattern}` },
+      { status: 400 }
     );
   }
+
+  const result = streamText({
+    model: MODEL_ID,
+    system,
+    messages: await convertToModelMessages(messages),
+  });
+
+  return result.toUIMessageStreamResponse();
 }

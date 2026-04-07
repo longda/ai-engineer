@@ -1,18 +1,18 @@
 /**
- * Prompt pattern templates for the comparison demo.
+ * System prompts for the three prompt-engineering patterns.
  *
- * Each builder returns a { system, prompt } pair suitable for
- * AI SDK `generateText()`. Prompts follow Anthropic-style XML
- * tagging for structure and clarity.
+ * Each prompt follows Anthropic-style XML tagging for structure.
+ * The user's question arrives via the messages array (useChat),
+ * so these are pure system-prompt strings.
  */
+
+export type PromptPattern = "zero-shot" | "few-shot" | "chain-of-thought";
 
 // ---------------------------------------------------------------------------
 // Zero-shot — no examples, just clear instructions
 // ---------------------------------------------------------------------------
 
-export function zeroShot(question: string) {
-  return {
-    system: `<role>You are a knowledgeable, concise assistant.</role>
+export const ZERO_SHOT_SYSTEM = `<role>You are a knowledgeable, concise assistant.</role>
 
 <instructions>
 Answer the user's question directly in exactly 3 bullet points.
@@ -24,18 +24,13 @@ Do not add a preamble or summary — go straight to the bullets.
 - Bullet 1
 - Bullet 2
 - Bullet 3
-</format>`,
-    prompt: question,
-  };
-}
+</format>`;
 
 // ---------------------------------------------------------------------------
 // Few-shot — two worked examples prime the style and depth
 // ---------------------------------------------------------------------------
 
-export function fewShot(question: string) {
-  return {
-    system: `<role>You are a knowledgeable, concise assistant.</role>
+export const FEW_SHOT_SYSTEM = `<role>You are a knowledgeable, concise assistant.</role>
 
 <instructions>
 Answer the user's question in exactly 3 bullet points.
@@ -68,38 +63,40 @@ Follow the tone and depth shown in the examples below.
 - Bullet 1
 - Bullet 2
 - Bullet 3
-</format>`,
-    prompt: question,
-  };
-}
+</format>`;
 
 // ---------------------------------------------------------------------------
 // Chain-of-thought — explicit thinking steps before the final answer
 // ---------------------------------------------------------------------------
 
-export function chainOfThought(question: string) {
-  return {
-    system: `<role>You are a knowledgeable, concise assistant who reasons step by step.</role>
+export const CHAIN_OF_THOUGHT_SYSTEM = `<role>You are a knowledgeable, concise assistant who reasons step by step.</role>
 
 <instructions>
 Before answering, think through the question carefully using the structure below.
-Show your reasoning inside <thinking> tags, then give the final answer inside <answer> tags.
+Show your reasoning inside a **Thinking** section, then give the final answer in an **Answer** section.
 The answer must contain exactly 3 practical, specific bullet points.
 </instructions>
 
 <format>
-<thinking>
+**Thinking**
+
 1. Identify what the question is really asking.
 2. Consider the key scientific, technical, or conceptual factors involved.
 3. Determine the most useful, non-obvious points to include.
-</thinking>
 
-<answer>
+**Answer**
+
 - Bullet 1
 - Bullet 2
 - Bullet 3
-</answer>
-</format>`,
-    prompt: question,
-  };
-}
+</format>`;
+
+// ---------------------------------------------------------------------------
+// Pattern lookup
+// ---------------------------------------------------------------------------
+
+export const SYSTEM_PROMPTS: Record<PromptPattern, string> = {
+  "zero-shot": ZERO_SHOT_SYSTEM,
+  "few-shot": FEW_SHOT_SYSTEM,
+  "chain-of-thought": CHAIN_OF_THOUGHT_SYSTEM,
+};

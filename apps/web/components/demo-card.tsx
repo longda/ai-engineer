@@ -18,7 +18,7 @@ export function DemoCard({ item, className }: DemoCardProps) {
   return (
     <Card
       className={cn(
-        "flex h-full flex-col gap-6 border-0 bg-white p-6 shadow-sm ring-0 sm:gap-8 sm:p-8 lg:p-10",
+        "flex h-full flex-col gap-7 rounded-2xl border border-stone-200/70 bg-white px-6 py-7 shadow-sm ring-0 sm:gap-8 sm:px-8 sm:py-8 lg:px-9 lg:py-9",
         className
       )}
     >
@@ -28,17 +28,17 @@ export function DemoCard({ item, className }: DemoCardProps) {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:gap-4">
-        <h3 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
+      <div className="flex flex-col gap-3.5 sm:gap-4.5">
+        <h3 className="max-w-[14ch] text-2xl font-bold leading-[1.05] tracking-tight sm:text-3xl">
           {item.title}
         </h3>
-        <p className="font-mono text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p className="max-w-[34ch] font-mono text-sm leading-7 text-muted-foreground sm:text-base">
           {item.description}
         </p>
       </div>
 
       {isLive ? (
-        <div className="mt-auto pt-2">
+        <div className="mt-auto pt-3">
           <Link
             href={item.href!}
             className={cn(

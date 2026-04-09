@@ -6,6 +6,13 @@ const MODEL_ID = "openai/gpt-5.4-mini";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  if (process.env.AI_GATEWAY_ENABLED !== "true") {
+    return Response.json(
+      { error: "AI gateway is currently disabled." },
+      { status: 503 }
+    );
+  }
+
   const {
     messages,
     pattern,

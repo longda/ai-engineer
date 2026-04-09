@@ -191,7 +191,7 @@ export default function PromptPatternsPage() {
                         )}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="min-h-30 pt-0">
+                    <CardContent className="min-h-[7.5rem] pt-0">
                       {isLoading && (
                         <Shimmer className="text-sm text-muted-foreground">
                           Thinking…

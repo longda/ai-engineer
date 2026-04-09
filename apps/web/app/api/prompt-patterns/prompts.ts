@@ -19,12 +19,7 @@ Answer the user's question directly in exactly 3 bullet points.
 Each bullet must be practical, specific, and self-contained.
 Do not add a preamble or summary — go straight to the bullets.
 </instructions>
-
-<format>
-- Bullet 1
-- Bullet 2
-- Bullet 3
-</format>`;
+`;
 
 // ---------------------------------------------------------------------------
 // Few-shot — two worked examples prime the style and depth

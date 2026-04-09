@@ -23,7 +23,7 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 2,
     title: "Prompt engineering patterns",
     description:
-      "Compare zero-shot, few-shot, and chain-of-thought; tool calling with AI SDK.",
+      "Compare zero-shot, few-shot, and chain-of-thought prompt patterns side-by-side.",
     href: "/prompt-patterns",
     status: "live",
   },

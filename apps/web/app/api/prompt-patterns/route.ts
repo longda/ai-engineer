@@ -1,4 +1,5 @@
-import { streamText, type UIMessage, convertToModelMessages } from "ai";
+import { streamText } from "@/lib/ai";
+import { type UIMessage, convertToModelMessages } from "ai";
 import { SYSTEM_PROMPTS, type PromptPattern } from "./prompts";
 
 const MODEL_ID = "openai/gpt-5.4-mini";

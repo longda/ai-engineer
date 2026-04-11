@@ -1,3 +1,4 @@
+import "server-only";
 import { initLogger, wrapAISDK } from "braintrust";
 import * as ai from "ai";
 

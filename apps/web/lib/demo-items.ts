@@ -53,7 +53,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 6,
     title: "Single agent",
     description: "ReAct-style agent with tools, steps, and memory.",
-    status: "soon",
+    href: "/agent",
+    status: "live",
   },
   {
     id: "multi-agent",

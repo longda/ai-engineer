@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.95",
     "@ai-sdk/react": "^3.0.154",
+    "@ai-sdk/xai": "^3.0.83",
     "@base-ui/react": "^1.3.0",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@repo/ui": "workspace:*",

@@ -92,17 +92,6 @@ Key details:
 - The agent can store user preferences or facts with `remember` and fetch them later with `recall`.
 - `list_memories` exposes the currently saved keys when the agent needs to inspect what it already knows.
 
-### Objective 11.1: Braintrust Tracing
-
-Description: Tracing is wired into both prompt-based and agent-based AI flows.
-
-Key details:
-
-- `wrapAISDK()` is used for AI SDK function tracing.
-- `wrapAgentClass()` is used so `ToolLoopAgent` runs are traced as agent executions.
-- The prompt-pattern route and the sports-agent stack both send traces when `BRAINTRUST_API_KEY` is configured.
-- This is the current observability foundation for later cost and quality instrumentation work.
-
 ### Objective 7: Multi-Agent Trend Report
 
 Description: A multi-agent workflow that researches a chosen topic on X, runs a verification checkpoint, and renders a structured report with citations.
@@ -116,3 +105,14 @@ Key details:
 - The verification step is intentionally permissive in this MVP: it blocks obviously thin packets, but it does not perform live URL reachability checks.
 - The final report includes an executive summary, theme breakdowns, supporting data, and source citations for UI rendering.
 - Braintrust wraps the agent class here as well, so the multi-agent run is traced end to end when `BRAINTRUST_API_KEY` is configured.
+
+### Objective 11.1: Braintrust Tracing
+
+Description: Tracing is wired into both prompt-based and agent-based AI flows.
+
+Key details:
+
+- `wrapAISDK()` is used for AI SDK function tracing.
+- `wrapAgentClass()` is used so `ToolLoopAgent` runs are traced as agent executions.
+- The prompt-pattern route and the sports-agent stack both send traces when `BRAINTRUST_API_KEY` is configured.
+- This is the current observability foundation for later cost and quality instrumentation work.

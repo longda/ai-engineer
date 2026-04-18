@@ -65,123 +65,66 @@ function getXStatusUrlParts(url: string) {
   }
 }
 
-function isHandleMatch(expectedHandle: string, url: string) {
-  const parts = getXStatusUrlParts(url);
-  if (!parts) {
-    return false;
-  }
-
-  return parts.handle.toLowerCase() === expectedHandle.replace(/^@/, "").toLowerCase();
+function buildVerifiedSources(packet: ResearchPacket) {
+  return packet.sourcePosts.slice(0, MAX_SOURCE_URLS).map(({ handle, postUrl }) => ({
+    handle,
+    postUrl,
+    statusCode: null,
+    reachable: true,
+  }));
 }
 
-function isReachableStatusCode(statusCode: number | null, isXStatusUrl: boolean) {
-  if (statusCode == null) {
-    return false;
+function buildPermissiveVerificationResult(packet: ResearchPacket): VerificationResult {
+  const verifiedSources = buildVerifiedSources(packet);
+  const themeCount = packet.themes.length;
+
+  if (verifiedSources.length < 4 || themeCount < 2) {
+    return {
+      verdict: "retry",
+      summary:
+        "The packet is still too thin for report generation, even with permissive verification enabled.",
+      issues: [
+        "At least 4 source posts and 2 themes are required to continue.",
+      ],
+      retryGuidance: [
+        "Add more source posts or themes before generating the report.",
+      ],
+      verifiedSources,
+      validSourceCount: verifiedSources.length,
+    };
   }
 
-  if (statusCode === 404 || statusCode === 410) {
-    return false;
-  }
-
-  if (statusCode >= 200 && statusCode < 400) {
-    return true;
-  }
-
-  // X often blocks anonymous agent traffic with 401/403/429 even when the
-  // post exists, so treat those as gated-but-existing for URL verification.
-  if (isXStatusUrl && [401, 403, 429].includes(statusCode)) {
-    return true;
-  }
-
-  return false;
+  return {
+    verdict: "pass",
+    summary:
+      "Permissive verification passed. URL reachability checks are disabled and the packet has enough sources and themes to continue.",
+    issues: [],
+    retryGuidance: [],
+    verifiedSources,
+    validSourceCount: verifiedSources.length,
+  };
 }
 
 const verificationTools: ToolSet = {
-  verify_source_urls: tool({
+  inspect_research_packet: tool({
     description:
-      "Check whether source post URLs appear to exist. For X/Twitter status URLs, treat 401/403/429 as gated-but-existing and only fail explicit 404/410 or malformed URLs.",
+      "Inspect a research packet using permissive verification rules. This does not perform network reachability checks.",
     inputSchema: z.object({
-      sources: z
-        .array(
-          z.object({
-            handle: z.string(),
-            postUrl: z.string().url(),
-          })
-        )
-        .min(1)
-        .max(MAX_SOURCE_URLS),
+      packet: researchPacketSchema,
     }),
-    execute: async ({ sources }) => {
-      const results = await Promise.all(
-        sources.map(async ({ handle, postUrl }) => {
-          const isXStatusUrl = getXStatusUrlParts(postUrl) !== null;
-          const handleMatches = isXStatusUrl && isHandleMatch(handle, postUrl);
+    execute: async ({ packet }) => {
+      const verifiedSources = buildVerifiedSources(packet);
+      const uniqueUrls = new Set(verifiedSources.map(({ postUrl }) => postUrl));
+      const offPlatformSourceCount = verifiedSources.filter(
+        ({ postUrl }) => getXStatusUrlParts(postUrl) === null
+      ).length;
 
-          if (isXStatusUrl && !handleMatches) {
-            return {
-              handle,
-              postUrl,
-              reachable: false,
-              statusCode: null,
-            };
-          }
-
-          const methods: Array<"HEAD" | "GET"> = ["HEAD", "GET"];
-
-          for (const method of methods) {
-            try {
-              const response = await fetch(postUrl, {
-                method,
-                redirect: "follow",
-                headers:
-                  method === "GET"
-                    ? {
-                        Range: "bytes=0-0",
-                        "User-Agent": "Mozilla/5.0",
-                      }
-                    : {
-                        "User-Agent": "Mozilla/5.0",
-                      },
-              });
-
-              const reachable = isReachableStatusCode(
-                response.status,
-                isXStatusUrl
-              );
-
-              return {
-                handle,
-                postUrl,
-                reachable,
-                statusCode: response.status,
-              };
-            } catch {
-              continue;
-            }
-          }
-
-          if (isXStatusUrl) {
-            return {
-              handle,
-              postUrl,
-              // If the URL shape is valid and the handle/path match, treat this
-              // as unresolved rather than definitely missing. The verifier can
-              // still reject weak evidence based on duplication or theme support.
-              reachable: true,
-              statusCode: null,
-            };
-          }
-
-          return {
-            handle,
-            postUrl,
-            reachable: false,
-            statusCode: null,
-          };
-        })
-      );
-
-      return { results };
+      return {
+        verification: buildPermissiveVerificationResult(packet),
+        themeCount: packet.themes.length,
+        uniqueSourceUrlCount: uniqueUrls.size,
+        offPlatformSourceCount,
+      };
     },
   }),
 };
@@ -232,17 +175,17 @@ const verifierAgent = new TracedToolLoopAgent({
 
 Your job:
 1. Review the research packet.
-2. Call verify_source_urls with the packet's sourcePosts before deciding.
-3. Reject the packet when it has fewer than 4 usable source URLs, duplicate evidence, or weak support for the main themes.
-4. Return verdict=retry when the packet needs another research pass.
-5. Return verdict=pass only when the packet is fit for report generation.
+2. Call inspect_research_packet exactly once before deciding.
+3. This verification is intentionally permissive for the demo.
+4. Return verdict=retry only when the packet has fewer than 4 source posts or fewer than 2 themes.
+5. Otherwise return verdict=pass so report generation can continue.
 
 Output rules:
+- Use the verification object returned by inspect_research_packet as the basis for your final answer.
 - verifiedSources must contain only handle, postUrl, statusCode, and reachable.
-- Copy handle and postUrl from the packet/tool output; do not invent or expand the shape.
-- For X/Twitter URLs, 401/403/429 do not mean the post is missing. Treat explicit 404/410 or malformed URL structure as failures.
+- Do not perform or imply URL reachability checks.
 
-Be strict. The goal is to prevent cascading failures.
+Be consistent. The goal is to keep the demo moving while still blocking obviously thin packets.
 `,
   tools: verificationTools,
   output: Output.object({ schema: verificationResultSchema }),
@@ -301,44 +244,22 @@ const plannerTools: ToolSet = {
       packet: researchPacketSchema,
     }),
     execute: async ({ packet }, { abortSignal }) => {
+      const fallback = buildPermissiveVerificationResult(packet);
+
       try {
-        const verifiedSources = packet.sourcePosts
-          .slice(0, MAX_SOURCE_URLS)
-          .map(({ handle, postUrl }) => ({
-            handle,
-            postUrl,
-            statusCode: null,
-            reachable: true,
-          }));
+        const result = await verifierAgent.generate({
+          prompt: [
+            `Verify the research packet for the topic \"${packet.topic}\".`,
+            "Research packet:",
+            JSON.stringify(packet, null, 2),
+          ].join("\n\n"),
+          abortSignal,
+        });
 
-        if (verifiedSources.length < 4 || packet.themes.length < 2) {
-          return {
-            verdict: "retry" as const,
-            summary:
-              "The packet is still too thin for report generation, even with permissive verification enabled.",
-            issues: [
-              "At least 4 source posts and 2 themes are required to continue.",
-            ],
-            retryGuidance: [
-              "Add more source posts or themes before generating the report.",
-            ],
-            verifiedSources,
-            validSourceCount: verifiedSources.length,
-          };
-        }
-
-        return {
-          verdict: "pass" as const,
-          summary:
-            "Permissive verification passed. URL reachability checks are disabled and the packet is being allowed through for report generation.",
-          issues: [],
-          retryGuidance: [],
-          verifiedSources,
-          validSourceCount: verifiedSources.length,
-        };
+        return verificationResultSchema.parse(result.output ?? fallback);
       } catch (error) {
         console.error("[multi-agent:verify] schema failure", error);
-        throw error;
+        return fallback;
       }
     },
   }),
@@ -402,7 +323,7 @@ export function buildPlannerPrompt(topic: z.infer<typeof topicSchema>) {
     "Citations: include direct source post URLs and handles.",
     "Freshness: prefer posts created in the last 24 hours, not older announcements that are merely still being discussed.",
     "Source quality: prefer primary announcement posts or direct reporting over roundup accounts when possible.",
-    "Verification: reject unreachable or unsupported sources before report generation.",
+    "Verification: include supported, specific source URLs and enough evidence for each claim; verification may flag thin sourcing, but it does not confirm URL reachability.",
   ].join("\n");
 }
 

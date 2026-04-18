@@ -3,7 +3,9 @@ import { topicSchema } from "./topics";
 
 const absoluteUrlSchema = z
   .string()
-  .min(1)
+  .regex(/^https:\/\/\S+$/, {
+    message: "URL must be an absolute https URL.",
+  })
   .describe("Absolute URL string including the https:// prefix.");
 
 export const sourcePostSchema = z.object({

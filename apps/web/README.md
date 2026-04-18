@@ -40,15 +40,17 @@ The sample file includes the environment variables this app expects:
 
 | Variable | What it is for | Where to get it |
 | --- | --- | --- |
-| `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo and the sports agent. | Create an API key in the Vercel AI Gateway dashboard.
+| `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo, the sports agent, and the multi-agent planner/report/verification steps. | Create an API key in the Vercel AI Gateway dashboard.
 | `BRAINTRUST_API_KEY` | Enables Braintrust tracing for AI SDK calls and agent runs. | Create an API key in the Braintrust dashboard.
 | `UPSTASH_REDIS_REST_URL` | Points the agent memory layer at your Upstash Redis REST endpoint. | Create an Upstash Redis database and copy the REST URL from its details page.
 | `UPSTASH_REDIS_REST_TOKEN` | Authenticates requests to the Upstash Redis REST API. | Copy the REST token from the same Upstash Redis database settings page.
+| `XAI_API_KEY` | Authenticates the direct xAI Responses API calls used by the multi-agent research worker for `x_search` and `web_search`. This is needed in addition to `AI_GATEWAY_API_KEY` because the current X research tool path runs directly against xAI, not through the gateway. | Create an API key in the xAI console.
 
 Notes:
 
 - Do not commit real credentials.
 - Braintrust tracing is wired into the app, so `BRAINTRUST_API_KEY` should be set if you want trace visibility during local runs.
+- For the multi-agent trend-report flow, set both `AI_GATEWAY_API_KEY` and `XAI_API_KEY`: the planner/report/verifier agents still use the gateway, while the X research worker uses xAI's native tool-enabled Responses API.
 
 ## Completed Objective Tasks
 
@@ -100,3 +102,17 @@ Key details:
 - `wrapAgentClass()` is used so `ToolLoopAgent` runs are traced as agent executions.
 - The prompt-pattern route and the sports-agent stack both send traces when `BRAINTRUST_API_KEY` is configured.
 - This is the current observability foundation for later cost and quality instrumentation work.
+
+### Objective 7: Multi-Agent Trend Report
+
+Description: A multi-agent workflow that researches a chosen topic on X, runs a verification checkpoint, and renders a structured report with citations.
+
+Key details:
+
+- Live route: `/multi-agent`
+- Uses `ToolLoopAgent` for all four roles: planner/orchestrator, X research worker, verification worker, and report writer.
+- The planner enforces a fixed flow of research, verification, and then report generation.
+- The research worker uses xAI's Responses API with `x_search` and `web_search` tools to gather recent X posts and supporting context.
+- The verification step is intentionally permissive in this MVP: it blocks obviously thin packets, but it does not perform live URL reachability checks.
+- The final report includes an executive summary, theme breakdowns, supporting data, and source citations for UI rendering.
+- Braintrust wraps the agent class here as well, so the multi-agent run is traced end to end when `BRAINTRUST_API_KEY` is configured.

@@ -15,11 +15,34 @@ export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
-  const uiMessages = messages as UIMessage[];
   let mcpClient: Awaited<ReturnType<typeof createChuckMcpClient>> | undefined;
 
   try {
+    let body: unknown;
+
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json(
+        { error: "Invalid JSON request body." },
+        { status: 400 }
+      );
+    }
+
+    const messages =
+      typeof body === "object" && body !== null && "messages" in body
+        ? (body as { messages?: unknown }).messages
+        : undefined;
+
+    if (!Array.isArray(messages)) {
+      return Response.json(
+        { error: "Invalid request body. Expected a messages array." },
+        { status: 400 }
+      );
+    }
+
+    const uiMessages = messages as UIMessage[];
+
     mcpClient = await createChuckMcpClient(req.url);
     const discoveredTools = await mcpClient.tools();
     const toolNames = getDiscoveredToolNames(discoveredTools);

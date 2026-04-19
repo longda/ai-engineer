@@ -1,21 +1,34 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { createChuckMcpServer } from "@/lib/mcp/server";
+import {
+  CHUCK_MCP_TOOL_NAMES,
+  createChuckMcpServer,
+} from "@/lib/mcp/server";
 
 export const dynamic = "force-dynamic";
-
-const TOOL_NAMES = ["list_categories", "get_random_joke", "search_jokes"];
 
 export function GET() {
   return Response.json({
     name: "chuck-norris-mcp",
     transport: "streamable-http",
-    tools: TOOL_NAMES,
+    tools: CHUCK_MCP_TOOL_NAMES,
   });
 }
 
 export async function POST(req: Request) {
   try {
-    const parsedBody = await req.json().catch(() => undefined);
+    let parsedBody: unknown;
+
+    if (req.headers.get("content-type")?.includes("application/json")) {
+      try {
+        parsedBody = await req.clone().json();
+      } catch {
+        return Response.json(
+          { error: "Invalid JSON request body." },
+          { status: 400 }
+        );
+      }
+    }
+
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });

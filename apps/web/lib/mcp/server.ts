@@ -8,6 +8,12 @@ import {
   searchJokes,
 } from "@/lib/mcp/chuck-norris";
 
+export const CHUCK_MCP_TOOL_NAMES = [
+  "list_categories",
+  "get_random_joke",
+  "search_jokes",
+] as const;
+
 function toToolResult(
   text: string,
   structuredContent?: Record<string, unknown>
@@ -25,7 +31,7 @@ export function createChuckMcpServer() {
   });
 
   chuckMcpServer.registerTool(
-    "list_categories",
+    CHUCK_MCP_TOOL_NAMES[0],
     {
       title: "List joke categories",
       description: "List all available Chuck Norris joke categories.",
@@ -46,7 +52,7 @@ export function createChuckMcpServer() {
   );
 
   chuckMcpServer.registerTool(
-    "get_random_joke",
+    CHUCK_MCP_TOOL_NAMES[1],
     {
       title: "Get a random joke",
       description:
@@ -72,7 +78,7 @@ export function createChuckMcpServer() {
   );
 
   chuckMcpServer.registerTool(
-    "search_jokes",
+    CHUCK_MCP_TOOL_NAMES[2],
     {
       title: "Search jokes",
       description:

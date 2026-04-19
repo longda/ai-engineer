@@ -116,3 +116,18 @@ Key details:
 - `wrapAgentClass()` is used so `ToolLoopAgent` runs are traced as agent executions.
 - The prompt-pattern route and the sports-agent stack both send traces when `BRAINTRUST_API_KEY` is configured.
 - This is the current observability foundation for later cost and quality instrumentation work.
+
+### Objective 14: MCP Integration
+
+Description: A hosted HTTP MCP server wraps the Chuck Norris API, and a server-side agent route acts as the MCP client that discovers tools at runtime.
+
+Key details:
+
+- Live route: `/mcp`
+- MCP server route: `/api/mcp`
+- Discovery route: `/api/mcp-tools`
+- Agent route: `/api/mcp-agent`
+- The MCP server exposes `list_categories`, `get_random_joke`, and `search_jokes`.
+- The agent does not hardcode those tools locally. It connects to the MCP server with `@ai-sdk/mcp`, fetches the tool list dynamically, and passes the discovered tools into `ToolLoopAgent` for the current request.
+- The UI renders discovered tool names and tool call cards so the MCP layer is visible instead of hidden behind a generic wrapper.
+- Request path: UI -> agent route -> ToolLoopAgent -> MCP client -> MCP server -> Chuck Norris API.

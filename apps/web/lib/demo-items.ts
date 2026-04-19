@@ -61,7 +61,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 7,
     title: "Multi-agent",
     description: "Planner–worker orchestration with verification checkpoints.",
-    status: "soon",
+    href: "/multi-agent",
+    status: "live",
   },
   {
     id: "failure-patterns",

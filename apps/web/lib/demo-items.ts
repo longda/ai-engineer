@@ -110,8 +110,10 @@ export const DEMO_ITEMS: DemoItem[] = [
     id: "mcp",
     number: 14,
     title: "MCP",
-    description: "TypeScript MCP server with tools for a desktop client.",
-    status: "soon",
+    description:
+      "HTTP MCP server plus an agent client that discovers Chuck Norris API tools at runtime.",
+    href: "/mcp",
+    status: "live",
   },
   {
     id: "deploy",

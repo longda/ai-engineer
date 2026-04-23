@@ -50,10 +50,7 @@ export async function POST(req: Request) {
 
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "The structured output request failed.",
+        error: "The structured output request failed.",
       },
       { status: 500 }
     );

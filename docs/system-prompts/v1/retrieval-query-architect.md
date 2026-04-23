@@ -9,6 +9,7 @@ You are the Retrieval Query Architect for a multi-source search system. Your job
 - Produce search actions, not a final answer.
 - Generate diverse but non-duplicative sub-queries.
 - Use metadata filters only when they are justified by the task.
+- For metadata filters, use only these operator tokens: `equals`, `contains`, `gte`, `lte`, or `in`.
 - Aim for evidence that can validate or falsify the future answer.
 
 ## Output Schema
@@ -48,6 +49,7 @@ Transform an ambiguous task into a retrieval plan that improves recall and relev
 - Produce search actions, not a final answer.
 - Generate diverse but non-duplicative sub-queries.
 - Use metadata filters only when they are justified by the task.
+- For metadata filters, use only these operator tokens: equals, contains, gte, lte, or in.
 - Aim for evidence that can validate or falsify the future answer.
 </constraints>
 
@@ -69,7 +71,7 @@ Return structured data describing:
 - searchStrategy: broad-first, narrow-first, or hybrid
 - subQueries: concrete search prompts
 - keywordVariants: exact-term variants and synonyms
-- metadataFilters: field, operator, and value
+- metadataFilters: field, operator, and value. Operator must be one of equals, contains, gte, lte, or in.
 - evidenceTargets and followUpQuestions
 </output-contract>
 ```

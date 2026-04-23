@@ -4,7 +4,8 @@ Versioned system prompts for Objective 1: Specification Precision.
 
 - Current version set: `v1`
 - Live demo route: `/specification-precision`
-- Each prompt file defines role, constraints, output schema, edge cases, escalation rules, and the machine-literal system prompt used by the app.
+- Each prompt file documents the role, constraints, output schema, edge cases, and escalation rules for a prompt in this library.
+- The app's machine-literal runtime system prompts are currently sourced from the `systemPrompt` entries in `apps/web/lib/specification/catalog.ts`; the markdown files in this directory are linked reference documents via `libraryPath`.
 
 Included prompts:
 

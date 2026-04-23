@@ -7,7 +7,6 @@ import {
   FileStackIcon,
   PlayIcon,
   ShieldAlertIcon,
-  SparklesIcon,
   WandSparklesIcon,
 } from "lucide-react";
 import {

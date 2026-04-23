@@ -20,7 +20,7 @@ const mcpToolSelectionSchema = z.object({
   rejectedTools: z.array(rejectedToolSchema),
   clarifyingQuestions: z.array(z.string().min(1)),
   humanInputRequired: z.boolean(),
-  humanInputReason: z.string(),
+  humanInputReason: z.string().min(1),
 });
 
 const memoryFactSchema = z.object({

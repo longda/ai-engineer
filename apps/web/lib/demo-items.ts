@@ -16,7 +16,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     title: "Specification precision",
     description:
       "System prompt library and Zod-validated structured output with generateObject.",
-    status: "soon",
+    href: "/specification-precision",
+    status: "live",
   },
   {
     id: "prompt-patterns",

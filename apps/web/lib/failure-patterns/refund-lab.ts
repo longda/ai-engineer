@@ -52,6 +52,14 @@ function inspectPacketDraft(draft: string) {
   const missingFields = REQUIRED_PACKET_FIELDS.filter(
     (field) => !presentFields.includes(field)
   );
+  const extraFields = parsed
+    ? Object.keys(parsed).filter(
+        (field) =>
+          !REQUIRED_PACKET_FIELDS.includes(
+            field as (typeof REQUIRED_PACKET_FIELDS)[number]
+          )
+      )
+    : [];
   const requiresEscalation = parsed?.requiresEscalation === true || /requiresescalation\s*[:=]\s*true/i.test(draft);
   const nextActionText = typeof parsed?.nextAction === "string" ? parsed.nextAction : draft;
   const nextActionLooksManualReview = /manual review|manual-review|escalate/i.test(
@@ -60,7 +68,9 @@ function inspectPacketDraft(draft: string) {
 
   return {
     hasAllFields: missingFields.length === 0,
+    hasExactFields: parsed != null && missingFields.length === 0 && extraFields.length === 0,
     missingFields,
+    extraFields,
     presentFields,
     requiresEscalation,
     nextActionLooksManualReview,

@@ -205,6 +205,7 @@ function evaluateToolSelectionErrors(
   toolTrace: ToolTraceEntry[]
 ): RunEvaluation {
   const normalized = normalizeText(assistantText);
+  const capturedToolTrace = toolTrace.length > 0;
   const firstTool = toolTrace[0]?.toolName;
   const authoritativeFirst = firstTool === "lookup_replacement_policy";
   const confirmsFreeShipping = containsAny(normalized, [
@@ -213,23 +214,26 @@ function evaluateToolSelectionErrors(
     "no charge for expedited replacement shipping",
     "replacement shipping is free",
   ]);
-  const passed = [authoritativeFirst, confirmsFreeShipping].filter(Boolean)
-    .length;
+  const passed = [
+    capturedToolTrace,
+    authoritativeFirst,
+    confirmsFreeShipping,
+  ].filter(Boolean).length;
 
   return {
-    verdict: buildVerdict(passed, 2),
+    verdict: buildVerdict(passed, 3),
     checks: [
+      capturedToolTrace
+        ? `Captured ${toolTrace.length} evidence step${toolTrace.length === 1 ? "" : "s"} for the routing decision.`
+        : "No tool call was captured before the final answer.",
       firstTool
         ? authoritativeFirst
           ? "Uses the authoritative replacement-policy lookup first."
           : `Starts with ${firstTool} instead of the authoritative policy lookup.`
-        : "No tool call was captured before the final answer.",
+        : "No first tool was captured for the routing decision.",
       confirmsFreeShipping
         ? "Final answer confirms free expedited replacement shipping."
         : "Final answer does not confirm the free expedited replacement-shipping entitlement.",
-      toolTrace.length > 0
-        ? `Captured ${toolTrace.length} evidence step${toolTrace.length === 1 ? "" : "s"} for the routing decision.`
-        : "No evidence trace was captured for the routing decision.",
     ],
   };
 }

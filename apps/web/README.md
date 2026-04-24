@@ -122,6 +122,21 @@ Key details:
 - The UI shows the assistant answer, evidence trace, and a deterministic evaluation verdict for each run.
 - Evaluations are programmatic where possible: required fact checks, packet field checks, tool-order checks, intermediate verification checks, and arithmetic checks.
 
+### Objective 10: Guardrails and Trust Design
+
+Description: A protected email assistant demo that combines input and output guardrails with a human approval checkpoint before a simulated high-risk action.
+
+Key details:
+
+- Live route: `/guardrails`
+- API route: `/api/guardrails`
+- Packet-driven demo covers three outcomes: a safe pass path, an input-blocked path, and an output-blocked path.
+- Input guardrails combine a binary model check for jailbreak or prompt-injection risk with deterministic secret and high-risk PII pattern detection.
+- Output guardrails validate email draft structure and run a safety/appropriateness check, including a block on explicitly demeaning or humiliating requested tone.
+- High-risk action is modeled as a `send_protected_email` tool call that requires explicit approval before execution.
+- The send step is intentionally fake and never delivers a real email; execution returns a simulated result payload for the UI.
+- The conversation renders guardrail result cards and approval UI so each stop or pass decision is visible during the run.
+
 ### Objective 11.1: Braintrust Tracing
 
 Description: Tracing is wired into both prompt-based and agent-based AI flows.

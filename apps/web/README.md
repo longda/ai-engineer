@@ -106,6 +106,22 @@ Key details:
 - The final report includes an executive summary, theme breakdowns, supporting data, and source citations for UI rendering.
 - Braintrust wraps the agent class here as well, so the multi-agent run is traced end to end when `BRAINTRUST_API_KEY` is configured.
 
+### Objective 8: Failure Pattern Recognition
+
+Description: A live comparison lab that runs the same refund-assistant case before and after remediation for six common agent failure patterns.
+
+Key details:
+
+- Live route: `/failure-patterns`
+- API route: `/api/failure-patterns`
+- Covers six selectable scenarios: context degradation, specification drift, sycophantic confirmation, tool-selection errors, cascading failure, and silent failure.
+- Keeps one shared business domain across all scenarios: DaveCanCode Returns Desk for refunds, returns, replacements, and shipping exceptions.
+- A single request runs both the broken variant and the remediated variant on the server, then returns the two results together for side-by-side rendering.
+- The comparison route uses the wrapped AI stack in `lib/ai.ts`, with real model output rather than authored broken/fixed answer fixtures.
+- Most scenarios run through a shared refund-assistant `ToolLoopAgent` plus deterministic local tools; the cascading-failure scenario uses a packet handoff plus verification/retry step so the failure chain is directly observable.
+- The UI shows the assistant answer, evidence trace, and a deterministic evaluation verdict for each run.
+- Evaluations are programmatic where possible: required fact checks, packet field checks, tool-order checks, intermediate verification checks, and arithmetic checks.
+
 ### Objective 11.1: Braintrust Tracing
 
 Description: Tracing is wired into both prompt-based and agent-based AI flows.

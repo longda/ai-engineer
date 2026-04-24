@@ -44,6 +44,20 @@ const HOSTILE_LANGUAGE_PATTERN =
 const HOSTILE_TONE_PATTERN =
   /\b(embarrass|humiliating|sarcastic|harsh|cutting|demeaning|mock|shame)\b/i;
 
+function parseBinaryGuardrailSignal(text: string) {
+  const normalized = text.trim();
+
+  if (normalized === "1") {
+    return true;
+  }
+
+  if (normalized === "0") {
+    return false;
+  }
+
+  return false;
+}
+
 export function getGuardrailsPacket(packetId: string) {
   return GUARDRAILS_PACKETS_BY_ID[packetId] ?? null;
 }
@@ -118,7 +132,7 @@ export async function evaluateInputGuardrails(
     ].join("\n\n"),
   });
 
-  const injectionPassed = text.trim().startsWith("1");
+  const injectionPassed = parseBinaryGuardrailSignal(text);
   const privacyPassed = secretOrPiiFindings.length === 0;
 
   const checks: GuardrailCheck[] = [
@@ -202,7 +216,7 @@ export async function evaluateOutputGuardrails(
     ].join("\n\n"),
   });
 
-  const safetyPassed = text.trim().startsWith("1");
+  const safetyPassed = parseBinaryGuardrailSignal(text);
   const hostileLanguageMatch = HOSTILE_LANGUAGE_PATTERN.exec(emailText);
   const hostileLanguagePassed = hostileLanguageMatch == null;
 
@@ -290,10 +304,14 @@ export function createSendProtectedEmailTool() {
     inputSchema: emailDraftSchema,
     needsApproval: true,
     execute: async ({ recipient, subject, body }) => {
+      const loggedAt = new Date().toISOString();
+
       console.log("[guardrails-demo] fake email send", {
-        recipient,
-        subject,
-        body,
+        simulated: true,
+        recipientDomain: recipient.split("@")[1] ?? "unknown",
+        subjectLength: subject.length,
+        bodyLength: body.length,
+        loggedAt,
       });
 
       return {
@@ -302,7 +320,7 @@ export function createSendProtectedEmailTool() {
         recipient,
         subject,
         preview: body,
-        loggedAt: new Date().toISOString(),
+        loggedAt,
       };
     },
   });
@@ -335,5 +353,18 @@ function findSecretOrPiiSignals(text: string) {
 export function isGuardrailsMessageArray(
   messages: UIMessage[]
 ): messages is GuardrailsUIMessage[] {
-  return Array.isArray(messages);
+  return messages.every((message) => {
+    const parts = message.parts;
+
+    return (
+      Array.isArray(parts) &&
+      parts.every(
+        (part) =>
+          typeof part === "object" &&
+          part !== null &&
+          "type" in part &&
+          typeof part.type === "string"
+      )
+    );
+  });
 }

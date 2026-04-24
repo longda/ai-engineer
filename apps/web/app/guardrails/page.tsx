@@ -108,6 +108,8 @@ function PacketPicker({
     <button
       type="button"
       onClick={onSelect}
+      role="radio"
+      aria-checked={selected}
       className={cn(
         "rounded-2xl border px-3 py-2 text-left transition-colors",
         selected
@@ -330,7 +332,7 @@ export default function GuardrailsPage() {
             </div>
           </CardHeader>
           <CardContent className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pt-0">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Choose a packet">
               {GUARDRAILS_PACKETS.map((packet) => (
                 <PacketPicker
                   key={packet.id}

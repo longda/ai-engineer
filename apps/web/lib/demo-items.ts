@@ -70,7 +70,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 8,
     title: "Failure patterns",
     description: "Demos and fixes for common agent failure modes.",
-    status: "soon",
+    href: "/failure-patterns",
+    status: "live",
   },
   {
     id: "context-architecture",

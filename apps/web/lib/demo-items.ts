@@ -85,7 +85,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 10,
     title: "Guardrails",
     description: "Input/output validation and human-in-the-loop approval flows.",
-    status: "soon",
+    href: "/guardrails",
+    status: "live",
   },
   {
     id: "observability",

@@ -48,7 +48,7 @@ import {
   formatDollarsPerMillion,
   formatUsd,
   type TokenEconomicsModel,
-} from "@/lib/token-economics/catalog";
+} from "@/lib/token-economics/catalog-shared";
 import type {
   RoutingDecisionData,
   TokenEconomicsUIMessage,
@@ -108,6 +108,12 @@ type ModelRow = {
   inputCostUsd: number | null;
   outputCostUsd: number | null;
 };
+
+function hasKnownTotalCost(
+  row: ModelRow
+): row is ModelRow & { totalCostUsd: number } {
+  return row.totalCostUsd !== null;
+}
 
 function SummaryCard({
   icon: Icon,
@@ -257,13 +263,14 @@ export function TokenEconomicsClient({
   const selectedRows = modelRows.filter((row) =>
     selectedModelIds.includes(row.model.id)
   );
+  const pricedSelectedRows = selectedRows.filter(hasKnownTotalCost);
   const blendedCostUsd =
-    selectedRows.length > 0
-      ? selectedRows.reduce((sum, row) => sum + (row.totalCostUsd ?? 0), 0) /
-        selectedRows.length
+    pricedSelectedRows.length > 0
+      ? pricedSelectedRows.reduce((sum, row) => sum + row.totalCostUsd, 0) /
+        pricedSelectedRows.length
       : null;
-  const cheapestSelected = selectedRows[0] ?? null;
-  const priciestSelected = selectedRows[selectedRows.length - 1] ?? null;
+  const cheapestSelected = pricedSelectedRows[0] ?? null;
+  const priciestSelected = pricedSelectedRows[pricedSelectedRows.length - 1] ?? null;
 
   function toggleModel(modelId: string) {
     setSelectedModelIds((current) =>
@@ -413,6 +420,7 @@ export function TokenEconomicsClient({
                       <button
                         key={row.model.id}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => toggleModel(row.model.id)}
                         className={cn(
                           "rounded-2xl border px-4 py-4 text-left transition-colors",

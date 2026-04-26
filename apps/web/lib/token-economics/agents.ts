@@ -4,16 +4,40 @@ import { TracedToolLoopAgent } from "@/lib/ai";
 import {
   COMPLEX_ROUTE_MODEL_ID,
   SIMPLE_ROUTE_MODEL_ID,
-} from "./catalog";
+} from "./catalog-shared";
 
 const ROUTER_MODEL_ID = "openai/gpt-5.4-mini";
 
-export const routerDecisionSchema = z.object({
-  complexity: z.enum(["simple", "complex"]),
-  selectedModelId: z.enum([SIMPLE_ROUTE_MODEL_ID, COMPLEX_ROUTE_MODEL_ID]),
-  rationale: z.string().min(1),
-  estimatedOutputTokens: z.number().int().min(80).max(4000),
-});
+export const routerDecisionSchema = z
+  .object({
+    complexity: z.enum(["simple", "complex"]),
+    selectedModelId: z.enum([SIMPLE_ROUTE_MODEL_ID, COMPLEX_ROUTE_MODEL_ID]),
+    rationale: z.string().min(1),
+    estimatedOutputTokens: z.number().int().min(80).max(4000),
+  })
+  .superRefine((decision, ctx) => {
+    if (
+      decision.complexity === "simple" &&
+      decision.selectedModelId !== SIMPLE_ROUTE_MODEL_ID
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["selectedModelId"],
+        message: `selectedModelId must be ${SIMPLE_ROUTE_MODEL_ID} when complexity is "simple"`,
+      });
+    }
+
+    if (
+      decision.complexity === "complex" &&
+      decision.selectedModelId !== COMPLEX_ROUTE_MODEL_ID
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["selectedModelId"],
+        message: `selectedModelId must be ${COMPLEX_ROUTE_MODEL_ID} when complexity is "complex"`,
+      });
+    }
+  });
 
 export type RouterDecision = z.infer<typeof routerDecisionSchema>;
 

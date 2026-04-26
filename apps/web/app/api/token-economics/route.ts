@@ -15,13 +15,17 @@ import {
   calculateScenarioCost,
   COMPLEX_ROUTE_MODEL_ID,
   estimateTokensFromText,
-  getCuratedTokenEconomicsModelMap,
   SIMPLE_ROUTE_MODEL_ID,
-} from "@/lib/token-economics/catalog";
+} from "@/lib/token-economics/catalog-shared";
+import { getCuratedTokenEconomicsModelMap } from "@/lib/token-economics/catalog";
 import type { TokenEconomicsUIMessage } from "@/lib/token-economics/types";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
+
+// Roughly accounts for the router/system prompt frame so the displayed estimate
+// does not treat the user message as the entire request cost.
+const ROUTING_OVERHEAD_TOKENS = 180;
 
 function stripDataParts(messages: TokenEconomicsUIMessage[]) {
   return messages.map((message) => ({
@@ -113,7 +117,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const estimatedInputTokens = estimateTokensFromText(latestUserText) + 180;
+    const estimatedInputTokens =
+      estimateTokensFromText(latestUserText) + ROUTING_OVERHEAD_TOKENS;
     const estimatedOutputTokens = routingDecision.estimatedOutputTokens;
     const selectedCost = calculateScenarioCost(
       selectedModel,

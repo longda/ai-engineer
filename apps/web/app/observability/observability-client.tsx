@@ -249,9 +249,9 @@ function ModelBreakdownList({
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <div
-          key={row.model}
+          key={`${row.model}-${index}`}
           className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-4"
         >
           <div className="flex flex-col gap-4">

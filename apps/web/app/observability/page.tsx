@@ -31,10 +31,12 @@ export default async function ObservabilityPage({
   try {
     dashboard = await getObservabilityDashboard(range);
   } catch (error) {
+    console.error("Failed to load observability dashboard", {
+      range,
+      error,
+    });
     errorMessage =
-      error instanceof Error
-        ? error.message
-        : "The observability dashboard could not be loaded.";
+      "The observability dashboard could not be loaded. Please try again later.";
   }
 
   return (

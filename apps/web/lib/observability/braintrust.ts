@@ -216,7 +216,10 @@ async function resolveProjectId() {
       }
 
       return project.id;
-    })();
+    })().catch((error) => {
+      cachedProjectIdPromise = null;
+      throw error;
+    });
   }
 
   return cachedProjectIdPromise;
@@ -400,7 +403,7 @@ export async function getObservabilityDashboard(
             count(1) AS llm_span_count,
             count(distinct root_span_id) AS query_count,
             sum(estimated_cost()) AS total_cost,
-            avg(estimated_cost()) AS avg_cost,
+            sum(estimated_cost()) / count(distinct root_span_id) AS avg_cost,
             sum(metrics.prompt_tokens) AS prompt_tokens,
             sum(metrics.completion_tokens) AS completion_tokens
           ${baseFilter}

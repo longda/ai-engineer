@@ -100,7 +100,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 12,
     title: "Token economics",
     description: "Model cost comparison and routing by task complexity.",
-    status: "soon",
+    href: "/token-economics",
+    status: "live",
   },
   {
     id: "fine-tuning",

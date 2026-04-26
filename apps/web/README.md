@@ -40,7 +40,7 @@ The sample file includes the environment variables this app expects:
 
 | Variable | What it is for | Where to get it |
 | --- | --- | --- |
-| `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo, the sports agent, and the multi-agent planner/report/verification steps. | Create an API key in the Vercel AI Gateway dashboard.
+| `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo, the sports agent, the token-economics routing lab, and the multi-agent planner/report/verification steps. | Create an API key in the Vercel AI Gateway dashboard.
 | `BRAINTRUST_API_KEY` | Enables Braintrust tracing for AI SDK calls and agent runs. | Create an API key in the Braintrust dashboard.
 | `UPSTASH_REDIS_REST_URL` | Points the agent memory layer at your Upstash Redis REST endpoint. | Create an Upstash Redis database and copy the REST URL from its details page.
 | `UPSTASH_REDIS_REST_TOKEN` | Authenticates requests to the Upstash Redis REST API. | Copy the REST token from the same Upstash Redis database settings page.
@@ -147,6 +147,21 @@ Key details:
 - `wrapAgentClass()` is used so `ToolLoopAgent` runs are traced as agent executions.
 - The prompt-pattern route and the sports-agent stack both send traces when `BRAINTRUST_API_KEY` is configured.
 - This is the current observability foundation for later cost and quality instrumentation work.
+
+### Objective 12: Token Economics
+
+Description: A combined calculator and routing lab that makes model pricing visible and shows a cost-aware selection between a cheaper and a more capable model.
+
+Key details:
+
+- Live route: `/token-economics`
+- The calculator uses a curated model set drawn from AI Gateway model metadata, with an authenticated package lookup when available and a public catalog fallback when it is not.
+- Users can select multiple models, set separate input and output token counts, and compare scenario cost across the selected set.
+- The top summary cards surface selected-model count, equal-weight blended cost, cheapest selected option, and most expensive selected option for the current token scenario.
+- The model grid lays out provider, input price, output price, context window, max output tokens, and scenario total in a compact card format inspired by the AI Gateway models page.
+- The routing lab uses canned prompts only and runs a visible two-step flow: router agent first, fulfillment agent second.
+- The routing summary card shows the chosen model, complexity classification, estimated token counts, estimated routed cost, alternate-model cost, and the delta between them.
+- The fulfillment pair is fixed on purpose for the demo: `openai/gpt-4o-mini` handles simple requests and `openai/gpt-5-mini` handles complex ones.
 
 ### Objective 14: MCP Integration
 

@@ -93,7 +93,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 11,
     title: "Observability",
     description: "Tracing, latency, tokens, and cost visibility.",
-    status: "soon",
+    href: "/observability",
+    status: "live",
   },
   {
     id: "token-economics",

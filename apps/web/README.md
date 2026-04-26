@@ -42,6 +42,8 @@ The sample file includes the environment variables this app expects:
 | --- | --- | --- |
 | `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo, the sports agent, the token-economics routing lab, and the multi-agent planner/report/verification steps. | Create an API key in the Vercel AI Gateway dashboard.
 | `BRAINTRUST_API_KEY` | Enables Braintrust tracing for AI SDK calls and agent runs. | Create an API key in the Braintrust dashboard.
+| `BRAINTRUST_PROJECT_NAME` | Tells the observability dashboard which Braintrust project to resolve by name. Required unless you set `BRAINTRUST_PROJECT_ID` directly. | Use the Braintrust project name you want the dashboard to read from.
+| `BRAINTRUST_PROJECT_ID` | Optional override for the observability dashboard so it can query a known Braintrust project directly instead of resolving by project name first. | Copy the project ID from the Braintrust project settings or URL.
 | `UPSTASH_REDIS_REST_URL` | Points the agent memory layer at your Upstash Redis REST endpoint. | Create an Upstash Redis database and copy the REST URL from its details page.
 | `UPSTASH_REDIS_REST_TOKEN` | Authenticates requests to the Upstash Redis REST API. | Copy the REST token from the same Upstash Redis database settings page.
 | `XAI_API_KEY` | Authenticates the direct xAI Responses API calls used by the multi-agent research worker for `x_search` and `web_search`. This is needed in addition to `AI_GATEWAY_API_KEY` because the current X research tool path runs directly against xAI, not through the gateway. | Create an API key in the xAI console.
@@ -147,6 +149,19 @@ Key details:
 - `wrapAgentClass()` is used so `ToolLoopAgent` runs are traced as agent executions.
 - The prompt-pattern route and the sports-agent stack both send traces when `BRAINTRUST_API_KEY` is configured.
 - This is the current observability foundation for later cost and quality instrumentation work.
+
+### Objective 11.2: Cost Dashboard
+
+Description: A server-rendered observability dashboard that reads Braintrust trace data through BTQL and turns it into a lightweight latency, cost, and token view inside the app.
+
+Key details:
+
+- Live route: `/observability`
+- The page queries Braintrust directly on the server and does not modify the tracing wrapper in `lib/ai.ts`.
+- The dashboard currently treats LLM spans as the billing unit and surfaces total estimated cost, average latency, total tokens, and average cost per query.
+- Time windows are switchable between 1, 7, and 14 days.
+- The main sections are daily cost trend, model breakdown, and recent traced queries.
+- Cost by endpoint or feature is intentionally not included in this version because the existing traces do not guarantee a stable route-level metadata field.
 
 ### Objective 12: Token Economics
 

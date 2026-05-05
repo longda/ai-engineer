@@ -10,8 +10,14 @@ initLogger({
 const wrapped = wrapAISDK(ai);
 
 // Re-export wrapped AI SDK functions — add more as needed
-export const { streamText, generateText, generateObject, streamObject } =
-  wrapped;
+export const {
+  streamText,
+  generateText,
+  generateObject,
+  streamObject,
+  embed,
+  embedMany,
+} = wrapped;
 
 // Wrap ToolLoopAgent class so all agent runs are traced in Braintrust
 export const TracedToolLoopAgent = wrapAgentClass(ai.ToolLoopAgent);

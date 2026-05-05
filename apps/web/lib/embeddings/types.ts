@@ -138,6 +138,8 @@ export type EmbeddedChunk = IndexedChunk & {
   vector: number[];
 };
 
+export type ChunkMetadata = Omit<IndexedChunk, "chunkText">;
+
 export type CachedScrapeArtifactMetadata = {
   publishedAt?: string;
   publishedTime?: string;
@@ -195,5 +197,5 @@ export type SemanticSearchResult = {
   chunkId: string;
   score: number;
   chunkText: string;
-  metadata: IndexedChunk;
+  metadata: ChunkMetadata;
 };

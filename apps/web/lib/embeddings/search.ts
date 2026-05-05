@@ -15,25 +15,5 @@ export async function runSemanticSearch(query: string, topK = SEARCH_TOP_K) {
     value: trimmed,
   });
 
-  const candidateCount = Math.min(Math.max(topK * 4, topK), 40);
-  const rawResults = await semanticSearchByVector(embedding, candidateCount);
-  const seenDocumentIds = new Set<string>();
-  const distinctResults = [];
-
-  for (const result of rawResults) {
-    const documentId = result.metadata.documentId;
-
-    if (seenDocumentIds.has(documentId)) {
-      continue;
-    }
-
-    seenDocumentIds.add(documentId);
-    distinctResults.push(result);
-
-    if (distinctResults.length === topK) {
-      break;
-    }
-  }
-
-  return distinctResults;
+  return semanticSearchByVector(embedding, topK);
 }

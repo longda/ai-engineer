@@ -247,7 +247,8 @@ function queryHit(chunkTexts: string[], expectedTerms: string[]) {
 async function evaluateStrategy(
   document: ScrapedPage,
   strategy: ChunkStrategy,
-  benchmark: ChunkingEvalBenchmark
+  benchmark: ChunkingEvalBenchmark,
+  queryEmbeddings: number[][]
 ) {
   const normalizedDocument = normalizeScrapedPage({
     sourceType: benchmark.sourceType,
@@ -260,11 +261,6 @@ async function evaluateStrategy(
   const { embeddings: chunkEmbeddings } = await embedMany({
     model: EMBEDDING_MODEL_ID,
     values: chunks.map((chunk) => chunk.chunkText),
-  });
-
-  const { embeddings: queryEmbeddings } = await embedMany({
-    model: EMBEDDING_MODEL_ID,
-    values: benchmark.queries.map((query) => query.query),
   });
 
   let hitCount = 0;
@@ -304,9 +300,15 @@ export async function runChunkingEvaluation(
 ) {
   const strategies: ChunkStrategy[] = ["fixed", "overlapping", "semantic"];
   const results = [];
+  const { embeddings: queryEmbeddings } = await embedMany({
+    model: EMBEDDING_MODEL_ID,
+    values: benchmark.queries.map((query) => query.query),
+  });
 
   for (const strategy of strategies) {
-    results.push(await evaluateStrategy(scrapedPage, strategy, benchmark));
+    results.push(
+      await evaluateStrategy(scrapedPage, strategy, benchmark, queryEmbeddings)
+    );
   }
 
   const sorted = [...results].sort((left, right) => right.recallAt3 - left.recallAt3);

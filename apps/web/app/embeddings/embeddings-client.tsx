@@ -40,6 +40,7 @@ const STARTER_QUERIES = [
 ];
 
 export function EmbeddingsClient() {
+  const ingestEnabled = process.env.NODE_ENV !== "production";
   const [searchQuery, setSearchQuery] = useState(STARTER_QUERIES[0]!);
   const [searchResults, setSearchResults] = useState<SemanticSearchResult[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -192,10 +193,15 @@ export function EmbeddingsClient() {
               <Badge variant="outline">derived patch records</Badge>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button onClick={handleIngest} disabled={ingesting} size="lg">
+              <Button onClick={handleIngest} disabled={ingesting || !ingestEnabled} size="lg">
                 {ingesting ? "Ingesting…" : "Run corpus ingest"}
               </Button>
             </div>
+            {!ingestEnabled ? (
+              <p className="text-sm text-muted-foreground">
+                Ingest is disabled from the public deployment. Run this locally, or call the route with the server-side ingest secret.
+              </p>
+            ) : null}
             {ingestError ? (
               <p className="text-sm text-destructive">{ingestError}</p>
             ) : null}
@@ -360,6 +366,7 @@ export function EmbeddingsClient() {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Ask about ARC Raiders items, systems, or updates…"
+              aria-label="Search the ARC Raiders embeddings index"
               className="h-10 px-3 text-sm"
             />
             <div className="flex flex-wrap gap-2">

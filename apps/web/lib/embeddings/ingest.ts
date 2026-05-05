@@ -1,15 +1,25 @@
 import "server-only";
 import { embedMany } from "@/lib/ai";
 import { chunkDocument } from "./chunking";
-import { DEFAULT_CHUNK_STRATEGY, EMBEDDING_MODEL_ID, MAX_SAMPLE_DOCUMENTS, VECTOR_NAMESPACE } from "./config";
+import {
+  DEFAULT_CHUNK_STRATEGY,
+  EMBEDDING_MODEL_ID,
+  MAX_DERIVED_PATCH_RECORDS_PER_DOCUMENT,
+  MAX_SAMPLE_DOCUMENTS,
+  VECTOR_NAMESPACE,
+} from "./config";
+import { getArtifactCacheStore } from "./artifact-cache";
 import { invalidateScrapePages, scrapePages } from "./firecrawl";
 import { derivePatchRecords, normalizeScrapedPage } from "./normalize";
 import {
   ARC_RAIDERS_CORPUS_SEEDS,
+  COMMUNITY_SOURCE_NAME,
   canonicalizeUrl,
   isCommunityItemDetailUrl,
   isOfficialEvergreenDocUrl,
   isOfficialUpdateUrl,
+  OFFICIAL_DOC_SOURCE_NAME,
+  OFFICIAL_UPDATE_SOURCE_NAME,
   uniqueUrls,
 } from "./source-map";
 import type {
@@ -54,6 +64,36 @@ function seedToTarget(seed: IngestTarget) {
   };
 }
 
+function classifyTargetUrl(url: string): IngestTarget | null {
+  const canonicalUrl = canonicalizeUrl(url);
+
+  if (isCommunityItemDetailUrl(canonicalUrl)) {
+    return {
+      sourceType: "community_items",
+      sourceName: COMMUNITY_SOURCE_NAME,
+      url: canonicalUrl,
+    };
+  }
+
+  if (isOfficialUpdateUrl(canonicalUrl)) {
+    return {
+      sourceType: "official_updates",
+      sourceName: OFFICIAL_UPDATE_SOURCE_NAME,
+      url: canonicalUrl,
+    };
+  }
+
+  if (isOfficialEvergreenDocUrl(canonicalUrl)) {
+    return {
+      sourceType: "official_docs",
+      sourceName: OFFICIAL_DOC_SOURCE_NAME,
+      url: canonicalUrl,
+    };
+  }
+
+  return null;
+}
+
 function discoverUrlsFromSeed(seed: IngestTarget, links: string[]) {
   switch (seed.sourceType) {
     case "official_docs":
@@ -83,12 +123,44 @@ async function buildCorpusTargets(options: IngestOptions = {}) {
   const allowedSourceTypes = options.sourceTypes
     ? new Set(options.sourceTypes)
     : null;
+  const targetUrls = options.targetUrls
+    ? uniqueUrls(options.targetUrls)
+    : null;
+
+  if (targetUrls && targetUrls.length > 0) {
+    const scopedTargets = targetUrls
+      .map((url) => classifyTargetUrl(url))
+      .filter((target): target is IngestTarget => {
+        if (!target) {
+          return false;
+        }
+
+        return allowedSourceTypes
+          ? allowedSourceTypes.has(target.sourceType)
+          : true;
+      });
+
+    return {
+      discoverySeeds: [],
+      discoveredTargets: [],
+      discoveredUrlCount: 0,
+      dedupedTargets: scopedTargets,
+      discoveryCacheHitCount: 0,
+      discoveryCacheMissCount: 0,
+      cacheStore: getArtifactCacheStore(),
+    };
+  }
+
   const scopedSeeds = allowedSourceTypes
     ? ARC_RAIDERS_CORPUS_SEEDS.filter((seed) => allowedSourceTypes.has(seed.sourceType))
     : ARC_RAIDERS_CORPUS_SEEDS;
   const discoverySeeds = scopedSeeds.filter((seed) => seed.discoveryOnly);
   const directSeeds = scopedSeeds.filter((seed) => !seed.discoveryOnly).map(seedToTarget);
   const discoveredTargets: IngestTarget[] = [];
+
+  if (options.refreshCache && discoverySeeds.length > 0) {
+    await invalidateScrapePages(discoverySeeds.map((seed) => seed.url));
+  }
 
   const {
     pages: scrapedDiscoverySeeds,
@@ -138,17 +210,15 @@ async function buildCorpusTargets(options: IngestOptions = {}) {
         )
       : dedupedTargets;
 
-  const targetUrls = options.targetUrls
-    ? new Set(options.targetUrls.map(canonicalizeUrl))
-    : null;
-  const scopedTargets = targetUrls
-    ? limitedTargets.filter((target) => targetUrls.has(target.url))
-    : limitedTargets;
+  const discoveredUrlCount = uniqueUrls(
+    discoveredTargets.map((target) => target.url)
+  ).length;
 
   return {
     discoverySeeds,
     discoveredTargets,
-    dedupedTargets: scopedTargets,
+    discoveredUrlCount,
+    dedupedTargets: limitedTargets,
     discoveryCacheHitCount,
     discoveryCacheMissCount,
     cacheStore,
@@ -157,6 +227,33 @@ async function buildCorpusTargets(options: IngestOptions = {}) {
 
 function getDocumentIdForTarget(target: IngestTarget) {
   return `${target.sourceType}_${hashString(target.url)}`;
+}
+
+function getDerivedPatchRecordDocumentId(originDocumentId: string, index: number) {
+  return `derived_patch_records_${hashString(`${originDocumentId}:${index}`)}`;
+}
+
+function getRepairPrefixes(targets: IngestTarget[]) {
+  const prefixes = new Set<string>();
+
+  for (const target of targets) {
+    const documentId = getDocumentIdForTarget(target);
+    prefixes.add(`${documentId}_`);
+
+    if (target.sourceType !== "official_updates") {
+      continue;
+    }
+
+    for (
+      let index = 0;
+      index < MAX_DERIVED_PATCH_RECORDS_PER_DOCUMENT;
+      index += 1
+    ) {
+      prefixes.add(`${getDerivedPatchRecordDocumentId(documentId, index)}_`);
+    }
+  }
+
+  return [...prefixes];
 }
 
 function summarizeDocuments(
@@ -177,6 +274,7 @@ export async function ingestArcRaidersCorpus(options: IngestOptions = {}) {
   const {
     discoverySeeds,
     discoveredTargets,
+    discoveredUrlCount,
     dedupedTargets,
     discoveryCacheHitCount,
     discoveryCacheMissCount,
@@ -188,9 +286,7 @@ export async function ingestArcRaidersCorpus(options: IngestOptions = {}) {
   }
 
   if (options.repairExisting) {
-    await deleteChunksByPrefix(
-      dedupedTargets.map((target) => `${getDocumentIdForTarget(target)}_`)
-    );
+    await deleteChunksByPrefix(getRepairPrefixes(dedupedTargets));
   }
 
   const {
@@ -248,7 +344,14 @@ export async function ingestArcRaidersCorpus(options: IngestOptions = {}) {
     );
   }
 
-  await upsertChunks(embeddedChunks, { reset: options.reset ?? true });
+  const isScopedIngest =
+    Boolean(options.targetUrls?.length) ||
+    Boolean(options.sourceTypes?.length) ||
+    typeof options.communityItemLimit === "number" ||
+    (options.communityItemOffset ?? 0) > 0 ||
+    options.repairExisting === true;
+
+  await upsertChunks(embeddedChunks, { reset: options.reset ?? !isScopedIngest });
 
   const summary: IngestRunSummary = {
     namespace: VECTOR_NAMESPACE,
@@ -258,7 +361,7 @@ export async function ingestArcRaidersCorpus(options: IngestOptions = {}) {
     cacheHitCount: discoveryCacheHitCount + targetCacheHitCount,
     cacheMissCount: discoveryCacheMissCount + targetCacheMissCount,
     discoverySeedCount: discoverySeeds.length,
-    discoveredUrlCount: discoveredTargets.length,
+    discoveredUrlCount,
     scrapedDocumentCount: scrapedTargets.length,
     normalizedDocumentCount: documents.length,
     derivedPatchRecordCount: derivedPatchRecords.length,

@@ -7,9 +7,9 @@ export type SourceSeed = {
   discoveryOnly: boolean;
 };
 
-const OFFICIAL_DOC_SOURCE_NAME = "Official ARC Raiders site";
-const OFFICIAL_UPDATE_SOURCE_NAME = "Official ARC Raiders updates";
-const COMMUNITY_SOURCE_NAME = "Metaforge ARC Raiders database";
+export const OFFICIAL_DOC_SOURCE_NAME = "Official ARC Raiders site";
+export const OFFICIAL_UPDATE_SOURCE_NAME = "Official ARC Raiders updates";
+export const COMMUNITY_SOURCE_NAME = "Metaforge ARC Raiders database";
 
 export const OFFICIAL_DOC_SEEDS: SourceSeed[] = [
   {

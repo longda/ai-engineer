@@ -18,12 +18,49 @@ const requestSchema = z
   })
   .optional();
 
+function isBadRequestError(error: unknown) {
+  return error instanceof SyntaxError || error instanceof z.ZodError;
+}
+
+function authorizeIngest(req: Request) {
+  if (process.env.NODE_ENV !== "production") {
+    return null;
+  }
+
+  const secret = process.env.EMBEDDINGS_INGEST_API_KEY;
+
+  if (!secret) {
+    return Response.json(
+      {
+        error:
+          "Embeddings ingest is disabled in production until EMBEDDINGS_INGEST_API_KEY is configured.",
+      },
+      { status: 503 }
+    );
+  }
+
+  if (req.headers.get("x-embeddings-ingest-key") !== secret) {
+    return Response.json(
+      { error: "Unauthorized embeddings ingest request." },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   const startedAt = Date.now();
 
   console.info("[embeddings/ingest] Starting ingest ARC Raiders corpus");
 
   try {
+    const authorizationFailure = authorizeIngest(req);
+
+    if (authorizationFailure) {
+      return authorizationFailure;
+    }
+
     const bodyText = await req.text();
     const payload = requestSchema.parse(bodyText ? JSON.parse(bodyText) : undefined);
     const summary = await ingestArcRaidersCorpus(payload ?? {});
@@ -39,7 +76,7 @@ export async function POST(req: Request) {
             ? error.message
             : "ARC Raiders corpus ingest failed.",
       },
-      { status: 500 }
+          { status: isBadRequestError(error) ? 400 : 500 }
     );
   } finally {
     console.info(

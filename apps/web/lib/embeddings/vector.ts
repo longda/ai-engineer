@@ -1,10 +1,15 @@
 import "server-only";
 import { Index } from "@upstash/vector";
 import { SEARCH_TOP_K, VECTOR_NAMESPACE } from "./config";
-import type { EmbeddedChunk, IndexedChunk, SemanticSearchResult } from "./types";
+import type { ChunkMetadata, EmbeddedChunk, SemanticSearchResult } from "./types";
 import { batchArray } from "./utils";
 
-let cachedIndex: Index<IndexedChunk> | null = null;
+let cachedIndex: Index<ChunkMetadata> | null = null;
+
+function toChunkMetadata(chunk: EmbeddedChunk): ChunkMetadata {
+  const { chunkText: _chunkText, vector: _vector, ...metadata } = chunk;
+  return metadata;
+}
 
 function getIndex() {
   if (cachedIndex) {
@@ -20,7 +25,7 @@ function getIndex() {
     );
   }
 
-  cachedIndex = new Index<IndexedChunk>({ url, token });
+  cachedIndex = new Index<ChunkMetadata>({ url, token });
   return cachedIndex;
 }
 
@@ -52,9 +57,7 @@ export async function upsertChunks(
         id: chunk.chunkId,
         vector: chunk.vector,
         data: chunk.chunkText,
-        metadata: {
-          ...chunk,
-        },
+        metadata: toChunkMetadata(chunk),
       }))
     );
   }
@@ -77,7 +80,7 @@ export async function semanticSearchByVector(
   });
 
   return results.map((result) => {
-    const metadata = result.metadata as IndexedChunk;
+    const metadata = result.metadata as ChunkMetadata;
 
     return {
       chunkId: String(result.id),
@@ -85,7 +88,7 @@ export async function semanticSearchByVector(
       chunkText:
         typeof result.data === "string"
           ? result.data
-          : metadata?.chunkText ?? "",
+          : "",
       metadata,
     } satisfies SemanticSearchResult;
   });

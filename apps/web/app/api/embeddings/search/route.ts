@@ -9,6 +9,10 @@ const requestSchema = z.object({
   topK: z.number().int().positive().max(20).optional(),
 });
 
+function isBadRequestError(error: unknown) {
+  return error instanceof SyntaxError || error instanceof z.ZodError;
+}
+
 export async function POST(req: Request) {
   const startedAt = Date.now();
 
@@ -29,7 +33,10 @@ export async function POST(req: Request) {
     const message =
       error instanceof Error ? error.message : "Semantic search failed.";
 
-    return Response.json({ error: message }, { status: 500 });
+    return Response.json(
+      { error: message },
+      { status: isBadRequestError(error) ? 400 : 500 }
+    );
   } finally {
     console.info(
       `[embeddings/search] Completed ARC Raiders semantic search in ${Date.now() - startedAt}ms`

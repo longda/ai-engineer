@@ -12,6 +12,8 @@ cp apps/web/.sample.env apps/web/.env.local
 pnpm dev
 ```
 
+Use Node 22 or newer. The Firecrawl SDK in this workspace declares `node >=22`.
+
 Open [http://localhost:3000](http://localhost:3000) after the dev server starts.
 
 Useful follow-up commands:
@@ -40,7 +42,7 @@ The sample file includes the environment variables this app expects:
 
 | Variable | What it is for | Where to get it |
 | --- | --- | --- |
-| `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo, the sports agent, the token-economics routing lab, and the multi-agent planner/report/verification steps. | Create an API key in the Vercel AI Gateway dashboard.
+| `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo, the embeddings lab, the sports agent, the token-economics routing lab, and the multi-agent planner/report/verification steps. | Create an API key in the Vercel AI Gateway dashboard.
 | `BRAINTRUST_API_KEY` | Enables Braintrust tracing for AI SDK calls and agent runs. | Create an API key in the Braintrust dashboard.
 | `BRAINTRUST_PROJECT_NAME` | Tells the observability dashboard which Braintrust project to resolve by name. Required unless you set `BRAINTRUST_PROJECT_ID` directly. | Use the Braintrust project name you want the dashboard to read from.
 | `BRAINTRUST_PROJECT_ID` | Optional override for the observability dashboard so it can query a known Braintrust project directly instead of resolving by project name first. | Copy the project ID from the Braintrust project settings or URL.
@@ -49,6 +51,7 @@ The sample file includes the environment variables this app expects:
 | `UPSTASH_REDIS_REST_TOKEN` | Authenticates requests to the Upstash Redis REST API for agent memory and cached markdown artifacts. | Copy the REST token from the same Upstash Redis database settings page.
 | `UPSTASH_VECTOR_REST_URL` | Points the ARC Raiders corpus indexer and search API at your Upstash Vector REST endpoint. | Create an Upstash Vector index and copy the REST URL from its details page.
 | `UPSTASH_VECTOR_REST_TOKEN` | Authenticates requests to the Upstash Vector REST API for corpus upserts and semantic search. | Copy the REST token from the same Upstash Vector index settings page.
+| `EMBEDDINGS_INGEST_API_KEY` | Optional local or server-side secret for privileged production calls to `/api/embeddings/ingest`. Public deployments reject ingest requests unless this key is configured and sent as `x-embeddings-ingest-key`. | Generate a random secret if you need remote ingest access; local development does not require it.
 | `XAI_API_KEY` | Authenticates the direct xAI Responses API calls used by the multi-agent research worker for `x_search` and `web_search`. This is needed in addition to `AI_GATEWAY_API_KEY` because the current X research tool path runs directly against xAI, not through the gateway. | Create an API key in the xAI console.
 
 Notes:

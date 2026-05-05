@@ -33,7 +33,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 3,
     title: "Embeddings & vector search",
     description: "Semantic search API with embed / embedMany and a vector store.",
-    status: "soon",
+    href: "/embeddings",
+    status: "live",
   },
   {
     id: "rag",

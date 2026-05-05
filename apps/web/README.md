@@ -1,6 +1,6 @@
 # AI Engineer Web App
 
-This app is the interactive Next.js surface for the ai-engineer portfolio repo. It currently ships the live demos for prompt-pattern comparison and a tool-using sports agent with persistent memory.
+This app is the interactive Next.js surface for the ai-engineer portfolio repo. It currently ships the live demos for prompt-pattern comparison, the ARC Raiders embeddings and vector-search lab, and a tool-using sports agent with persistent memory.
 
 ## Initial Project Setup
 
@@ -44,8 +44,11 @@ The sample file includes the environment variables this app expects:
 | `BRAINTRUST_API_KEY` | Enables Braintrust tracing for AI SDK calls and agent runs. | Create an API key in the Braintrust dashboard.
 | `BRAINTRUST_PROJECT_NAME` | Tells the observability dashboard which Braintrust project to resolve by name. Required unless you set `BRAINTRUST_PROJECT_ID` directly. | Use the Braintrust project name you want the dashboard to read from.
 | `BRAINTRUST_PROJECT_ID` | Optional override for the observability dashboard so it can query a known Braintrust project directly instead of resolving by project name first. | Copy the project ID from the Braintrust project settings or URL.
-| `UPSTASH_REDIS_REST_URL` | Points the agent memory layer at your Upstash Redis REST endpoint. | Create an Upstash Redis database and copy the REST URL from its details page.
-| `UPSTASH_REDIS_REST_TOKEN` | Authenticates requests to the Upstash Redis REST API. | Copy the REST token from the same Upstash Redis database settings page.
+| `FIRECRAWL_API_KEY` | Authenticates Firecrawl ingestion for the ARC Raiders embeddings and vector-search lab. | Create an API key in the Firecrawl dashboard.
+| `UPSTASH_REDIS_REST_URL` | Points both the agent memory layer and the ARC Raiders scrape-artifact cache at your Upstash Redis REST endpoint. | Create an Upstash Redis database and copy the REST URL from its details page.
+| `UPSTASH_REDIS_REST_TOKEN` | Authenticates requests to the Upstash Redis REST API for agent memory and cached markdown artifacts. | Copy the REST token from the same Upstash Redis database settings page.
+| `UPSTASH_VECTOR_REST_URL` | Points the ARC Raiders corpus indexer and search API at your Upstash Vector REST endpoint. | Create an Upstash Vector index and copy the REST URL from its details page.
+| `UPSTASH_VECTOR_REST_TOKEN` | Authenticates requests to the Upstash Vector REST API for corpus upserts and semantic search. | Copy the REST token from the same Upstash Vector index settings page.
 | `XAI_API_KEY` | Authenticates the direct xAI Responses API calls used by the multi-agent research worker for `x_search` and `web_search`. This is needed in addition to `AI_GATEWAY_API_KEY` because the current X research tool path runs directly against xAI, not through the gateway. | Create an API key in the xAI console.
 
 Notes:
@@ -69,6 +72,23 @@ Key details:
 - Prompt templates are defined server-side in `app/api/prompt-patterns/prompts.ts`.
 - The chain-of-thought lane separates visible reasoning steps from the final answer in the UI.
 - Braintrust wraps the AI SDK route so prompt runs are traceable.
+
+### Objective 3: Embeddings and Vector Search
+
+Description: An ARC Raiders embeddings lab that ingests approved source pages into a reusable corpus, compares chunking strategies, and exposes semantic vector search with citations.
+
+Key details:
+
+- Live route: `/embeddings`
+- API routes: `/api/embeddings/ingest`, `/api/embeddings/search`, and `/api/embeddings/chunking`
+- The approved corpus is limited to official ARC Raiders site pages, official ARC Raiders updates, and one approved community item database source.
+- Ingestion uses Firecrawl plus repo-owned normalization, chunking, embeddings, and Upstash Vector upserts instead of indexing raw HTML directly.
+- Embeddings use `openai/text-embedding-3-small` through the wrapped AI SDK entrypoint in `lib/ai.ts`.
+- The vector layer uses Upstash Vector namespace `arc-raiders-v1` and returns ranked chunks, metadata, and similarity scores from the search API.
+- Scrape artifacts are cached as markdown-only records in Upstash Redis so repeated ingests reuse previously downloaded pages and remain compatible with Vercel's runtime model.
+- The chunking lab compares fixed, overlapping, and semantic chunking on the approved long-form Metaforge item catalog source at `https://metaforge.app/arc-raiders/database/items/page/1`.
+- After fixing stale batch-scrape cache mapping, the benchmark now produces a discriminative result: semantic chunking wins on the catalog benchmark with `recall@3` of `9/10`, ahead of overlapping at `8/10` and fixed at `7/10`.
+- The ingest summary now exposes cache store, hit count, and miss count so refresh behavior is visible in the UI.
 
 ### Objective 6.1: Tool-Calling Single Agent
 

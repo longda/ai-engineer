@@ -6,6 +6,12 @@ If you are technical, this repo is a TypeScript and Next.js skills lab that demo
 
 If you are not technical, the short version is this: each demo is designed to show that I can make AI features more reliable, measurable, and easier to ship in a real product.
 
+## Production Note
+
+The deployed production build is meant to show the product surface and project narrative. Live AI features are available in local builds only, to avoid ongoing billing plus extra authentication and account overhead in production.
+
+DM me if you'd like production access.
+
 ## What The Project Covers
 
 AI engineering spans multiple disciplines. This repo is organized to show how those disciplines fit together in one product stack.

@@ -1,8 +1,60 @@
 # AI Engineer Web App
 
-This app is the interactive Next.js surface for the ai-engineer portfolio repo. It currently ships the live demos for prompt-pattern comparison, the ARC Raiders embeddings and vector-search lab, and a tool-using sports agent with persistent memory.
+This app is the main interactive surface for the `ai-engineer` repo. The root README gives the high-level portfolio story. This file is the operator's guide: what runs here, which demos are live, how the stack is wired, and what someone technical should look at first.
 
-## Initial Project Setup
+In practice, this app is a compact AI engineering lab built with Next.js, React, TypeScript, and the Vercel AI SDK. It is deliberately broader than a single chatbot. The shipped demos cover prompt contracts, structured outputs, semantic retrieval, tool use, memory, multi-agent orchestration, failure analysis, guardrails, observability, cost controls, and MCP integration.
+
+## What This App Demonstrates
+
+If you are technical, the app is meant to show production-oriented patterns: typed outputs, retrieval pipelines, vector metadata, tool orchestration, verification checkpoints, and traceable runtime behavior.
+
+If you are less technical, the short version is simpler: each page demonstrates one part of making AI features reliable enough to ship instead of just impressive enough to demo once.
+
+## Route Inventory
+
+### Live routes
+
+| Route | Objective | What it demonstrates |
+| --- | --- | --- |
+| `/` | Landing page | A skills-lab index that maps the project to 15 AI engineering objectives. |
+| `/specification-precision` | 1 | Structured output with prompt catalogs and schema-constrained results. |
+| `/prompt-patterns` | 2 | Zero-shot, few-shot, and chain-of-thought prompt comparisons on the same task. |
+| `/embeddings` | 3 | ARC Raiders ingestion, chunking comparison, embeddings, and semantic search. |
+| `/agent` | 6 | A tool-using ReAct-style assistant with long-term memory. |
+| `/multi-agent` | 7 | Planner, research, verification, and report-writing agents working as a system. |
+| `/failure-patterns` | 8 | Before-and-after demos for six common agent failure modes. |
+| `/guardrails` | 10 | Input screening, output validation, and human approval before a protected action. |
+| `/observability` | 11 | Braintrust-powered trace, token, latency, and cost visibility. |
+| `/token-economics` | 12 | Model pricing comparison plus cost-aware model routing. |
+| `/mcp` | 14 | A real HTTP MCP server and a client agent that discovers tools at runtime. |
+
+### Planned next routes
+
+| Objective | Planned area | Current status |
+| --- | --- | --- |
+| 4 | RAG pipeline | Next major build on top of the ARC Raiders retrieval foundation. |
+| 5 | Evaluation | Planned as the measurement layer for the RAG app. |
+| 9 | Context architecture | Planned as the multi-source extension of the retrieval stack. |
+| 13 | Fine-tuning | Planned as a narrow experiment, not the default runtime path. |
+| 15 | Deploy and ship | Repo narrative, demo polish, and public packaging are still in progress. |
+
+## Architecture At A Glance
+
+| Layer | Current choice | Why it is here |
+| --- | --- | --- |
+| App framework | Next.js 16 + React 19 | Fast iteration, server routes, streaming UI, and deployability. |
+| AI runtime | Vercel AI SDK v6 | Shared model calls, streaming helpers, typed outputs, and agent flows. |
+| Model access | Vercel AI Gateway | Centralized model routing and easier provider management. |
+| Vector store | Upstash Vector | Simple hosted vector index for retrieval demos. |
+| Cache and memory | Upstash Redis | Artifact caching for scraping and long-term agent memory. |
+| Scraping | Firecrawl | Controlled ingest of approved ARC Raiders sources. |
+| Tracing | Braintrust | Trace history, tokens, latency, and cost inspection. |
+| Research worker | xAI Responses API | Tool-enabled research flow for the multi-agent demo. |
+| Tool interoperability | MCP over HTTP | Demonstrates dynamic tool discovery instead of hardcoded local tools. |
+
+One repo convention matters across almost every route: model access is centralized through `lib/ai.ts` so demos share the same runtime surface for tracing, gateway usage, and AI SDK behavior.
+
+## Local Setup
 
 Run the app from the repository root:
 
@@ -12,7 +64,7 @@ cp apps/web/.sample.env apps/web/.env.local
 pnpm dev
 ```
 
-Use Node 22 or newer. The Firecrawl SDK in this workspace declares `node >=22`.
+Use Node 22 or newer. This workspace declares `node >=22`, and the Firecrawl SDK also expects that baseline.
 
 Open [http://localhost:3000](http://localhost:3000) after the dev server starts.
 
@@ -20,6 +72,7 @@ Useful follow-up commands:
 
 ```bash
 pnpm --filter web dev
+pnpm --filter web build
 pnpm --filter web check-types
 pnpm --filter web lint
 ```
@@ -28,7 +81,7 @@ pnpm --filter web lint
 
 ## Environment Variables
 
-For local development, use `.env.local` in this app instead of a committed `.env` file:
+Use `.env.local` in this app instead of a committed `.env` file:
 
 ```bash
 # from the repo root
@@ -38,43 +91,55 @@ cp apps/web/.sample.env apps/web/.env.local
 cp .sample.env .env.local
 ```
 
-The sample file includes the environment variables this app expects:
+The current sample file includes these variables:
 
-| Variable | What it is for | Where to get it |
+| Variable | Required for local use | What it powers |
 | --- | --- | --- |
-| `AI_GATEWAY_API_KEY` | Authenticates model calls sent through the Vercel AI Gateway. Required for the prompt-pattern demo, the embeddings lab, the sports agent, the token-economics routing lab, and the multi-agent planner/report/verification steps. | Create an API key in the Vercel AI Gateway dashboard.
-| `BRAINTRUST_API_KEY` | Enables Braintrust tracing for AI SDK calls and agent runs. | Create an API key in the Braintrust dashboard.
-| `BRAINTRUST_PROJECT_NAME` | Tells the observability dashboard which Braintrust project to resolve by name. Required unless you set `BRAINTRUST_PROJECT_ID` directly. | Use the Braintrust project name you want the dashboard to read from.
-| `BRAINTRUST_PROJECT_ID` | Optional override for the observability dashboard so it can query a known Braintrust project directly instead of resolving by project name first. | Copy the project ID from the Braintrust project settings or URL.
-| `FIRECRAWL_API_KEY` | Authenticates Firecrawl ingestion for the ARC Raiders embeddings and vector-search lab. | Create an API key in the Firecrawl dashboard.
-| `UPSTASH_REDIS_REST_URL` | Points both the agent memory layer and the ARC Raiders scrape-artifact cache at your Upstash Redis REST endpoint. | Create an Upstash Redis database and copy the REST URL from its details page.
-| `UPSTASH_REDIS_REST_TOKEN` | Authenticates requests to the Upstash Redis REST API for agent memory and cached markdown artifacts. | Copy the REST token from the same Upstash Redis database settings page.
-| `UPSTASH_VECTOR_REST_URL` | Points the ARC Raiders corpus indexer and search API at your Upstash Vector REST endpoint. | Create an Upstash Vector index and copy the REST URL from its details page.
-| `UPSTASH_VECTOR_REST_TOKEN` | Authenticates requests to the Upstash Vector REST API for corpus upserts and semantic search. | Copy the REST token from the same Upstash Vector index settings page.
-| `EMBEDDINGS_INGEST_API_KEY` | Optional local or server-side secret for privileged production calls to `/api/embeddings/ingest`. Public deployments reject ingest requests unless this key is configured and sent as `x-embeddings-ingest-key`. | Generate a random secret if you need remote ingest access; local development does not require it.
-| `XAI_API_KEY` | Authenticates the direct xAI Responses API calls used by the multi-agent research worker for `x_search` and `web_search`. This is needed in addition to `AI_GATEWAY_API_KEY` because the current X research tool path runs directly against xAI, not through the gateway. | Create an API key in the xAI console.
+| `AI_GATEWAY_API_KEY` | Yes for most interactive demos | Authenticates model calls sent through the Vercel AI Gateway. Needed for specification precision, prompt patterns, the sports agent, token economics routing, and the planner, report, and verification agent steps. |
+| `BRAINTRUST_API_KEY` | Optional but recommended | Enables tracing for AI SDK calls and agent runs. |
+| `BRAINTRUST_PROJECT_NAME` | Optional if `BRAINTRUST_PROJECT_ID` is set | Lets the observability dashboard resolve the Braintrust project by name. |
+| `BRAINTRUST_PROJECT_ID` | Optional | Direct project lookup override for the observability dashboard. |
+| `FIRECRAWL_API_KEY` | Required for embeddings ingest and chunking evaluation | Authenticates Firecrawl fetches for the ARC Raiders retrieval lab. |
+| `UPSTASH_REDIS_REST_URL` | Required for memory or scrape caching | Redis endpoint used for long-term memory and cached markdown scrape artifacts. |
+| `UPSTASH_REDIS_REST_TOKEN` | Required with the Redis URL above | Authenticates Redis REST requests. |
+| `UPSTASH_VECTOR_REST_URL` | Required for embeddings search and ingest | Upstash Vector endpoint for chunk upserts and semantic search. |
+| `UPSTASH_VECTOR_REST_TOKEN` | Required with the Vector URL above | Authenticates Vector REST requests. |
+| `EMBEDDINGS_INGEST_API_KEY` | Optional | Protects remote or production calls to `/api/embeddings/ingest`. Local development does not require it. |
+| `XAI_API_KEY` | Required for the multi-agent research worker | Authenticates direct xAI Responses API calls for `x_search` and `web_search`. |
 
 Notes:
 
-- Do not commit real credentials.
-- Braintrust tracing is wired into the app, so `BRAINTRUST_API_KEY` should be set if you want trace visibility during local runs.
-- For the multi-agent trend-report flow, set both `AI_GATEWAY_API_KEY` and `XAI_API_KEY`: the planner/report/verifier agents still use the gateway, while the X research worker uses xAI's native tool-enabled Responses API.
+- Do not commit real credentials into source control.
+- If you want trace visibility while developing, set `BRAINTRUST_API_KEY`.
+- If you want the multi-agent demo to work end to end, set both `AI_GATEWAY_API_KEY` and `XAI_API_KEY`.
+- If you want the embeddings lab to ingest or search real data, you need Firecrawl, Upstash Redis, and Upstash Vector configured together.
 
-## Completed Objective Tasks
+## Live Demo Notes
 
-These are the objective tasks currently implemented in this app.
+### Objective 1: Specification Precision
 
-### Objective 2.1: Prompt Pattern Comparison Tool
+Description: A structured-output lab for system prompts and schema-constrained results.
 
-Description: A side-by-side prompt lab that runs the same question through zero-shot, few-shot, and chain-of-thought system prompts.
+Key details:
+
+- Live route: `/specification-precision`
+- API route: `/api/specification-precision`
+- The page lets you switch across prompt definitions and run sample inputs through a typed response flow.
+- The output is rendered as structured data rather than free-form prose so the contract is obvious.
+- This is the cleanest example in the repo of "make the model behave like a component, not a guesser."
+
+### Objective 2: Prompt Engineering Patterns
+
+Description: A side-by-side prompt lab that runs the same question through zero-shot, few-shot, and chain-of-thought variants.
 
 Key details:
 
 - Live route: `/prompt-patterns`
-- One question fans out into three parallel AI SDK chat lanes.
+- API route: `/api/prompt-patterns`
+- One question fans out into three parallel AI SDK runs.
 - Prompt templates are defined server-side in `app/api/prompt-patterns/prompts.ts`.
 - The chain-of-thought lane separates visible reasoning steps from the final answer in the UI.
-- Braintrust wraps the AI SDK route so prompt runs are traceable.
+- Braintrust wraps the route so prompt runs are traceable.
 
 ### Objective 3: Embeddings and Vector Search
 
@@ -86,54 +151,45 @@ Key details:
 - API routes: `/api/embeddings/ingest`, `/api/embeddings/search`, and `/api/embeddings/chunking`
 - The approved corpus is limited to official ARC Raiders site pages, official ARC Raiders updates, and one approved community item database source.
 - Ingestion uses Firecrawl plus repo-owned normalization, chunking, embeddings, and Upstash Vector upserts instead of indexing raw HTML directly.
-- Embeddings use `openai/text-embedding-3-small` through the wrapped AI SDK entrypoint in `lib/ai.ts`.
-- The vector layer uses Upstash Vector namespace `arc-raiders-v1` and returns ranked chunks, metadata, and similarity scores from the search API.
-- Scrape artifacts are cached as markdown-only records in Upstash Redis so repeated ingests reuse previously downloaded pages and remain compatible with Vercel's runtime model.
-- The chunking lab compares fixed, overlapping, and semantic chunking on the approved long-form Metaforge item catalog source at `https://metaforge.app/arc-raiders/database/items/page/1`.
-- After fixing stale batch-scrape cache mapping, the benchmark now produces a discriminative result: semantic chunking wins on the catalog benchmark with `recall@3` of `9/10`, ahead of overlapping at `8/10` and fixed at `7/10`.
-- The ingest summary now exposes cache store, hit count, and miss count so refresh behavior is visible in the UI.
+- Embeddings use `openai/text-embedding-3-small` through `lib/ai.ts`.
+- The vector layer uses Upstash Vector namespace `arc-raiders-v1` and returns ranked chunks, metadata, and similarity scores.
+- Scrape artifacts are cached as markdown-only records in Upstash Redis so repeated ingests can reuse prior downloads.
+- The chunking lab compares fixed, overlapping, and semantic chunking on the approved Metaforge catalog benchmark source at `https://metaforge.app/arc-raiders/database/items/page/1`.
+- After fixing stale batch-scrape cache mapping, semantic chunking now wins the benchmark with `recall@3` of `9/10`, ahead of overlapping at `8/10` and fixed at `7/10`.
+- The ingest summary exposes cache store, hit count, and miss count so refresh behavior is visible in the UI.
 
-### Objective 6.1: Tool-Calling Single Agent
+### Objective 6: Single Agent and Long-Term Memory
 
-Description: A sports news assistant that uses a ReAct-style loop to search, reason, call tools, and produce a final answer.
+Description: A sports news assistant that uses a ReAct-style loop to search, reason, call tools, and remember user facts across sessions.
 
 Key details:
 
 - Live route: `/agent`
-- Uses `ToolLoopAgent` plus `createAgentUIStreamResponse` for streamed UI output.
+- API route: `/api/agent`
+- Uses `ToolLoopAgent` plus streamed UI output.
 - Tool set includes `web_search`, `get_current_date`, `calculate_stats`, `remember`, `recall`, and `list_memories`.
-- Supports multi-step requests such as finding current standings and then calculating derived stats.
-- Tool calls are rendered inline so the UI exposes what the agent searched or computed before answering.
-- Important implementation note: the built-in `gateway.tools.perplexitySearch()` provider tool did not reliably complete the final assistant text step in this `ToolLoopAgent` flow, so the shipped agent uses a custom execute-based `web_search` tool instead.
+- Supports multi-step tasks such as finding current standings and then calculating derived stats.
+- Tool calls are rendered inline so the user can see what the agent actually did before it answers.
+- Long-term memory is stored in Upstash Redis with a 30-day TTL.
+- One notable implementation choice: the built-in `gateway.tools.perplexitySearch()` path was not reliable enough for the final assistant-text step in this SDK version, so the shipped agent uses a custom execute-based `web_search` tool instead.
 
-### Objective 6.2: Long-Term Memory
-
-Description: Persistent cross-session memory for the sports agent using Upstash Redis.
-
-Key details:
-
-- Memory keys are stored under a dedicated Redis prefix.
-- Saved memories currently use a 30-day TTL.
-- The agent can store user preferences or facts with `remember` and fetch them later with `recall`.
-- `list_memories` exposes the currently saved keys when the agent needs to inspect what it already knows.
-
-### Objective 7: Multi-Agent Trend Report
+### Objective 7: Multi-Agent Orchestration
 
 Description: A multi-agent workflow that researches a chosen topic on X, runs a verification checkpoint, and renders a structured report with citations.
 
 Key details:
 
 - Live route: `/multi-agent`
-- Uses `ToolLoopAgent` for all four roles: planner/orchestrator, X research worker, verification worker, and report writer.
+- API route: `/api/multi-agent`
+- Uses `ToolLoopAgent` for all four roles: planner, research worker, verification worker, and report writer.
 - The planner enforces a fixed flow of research, verification, and then report generation.
-- The research worker uses xAI's Responses API with `x_search` and `web_search` tools to gather recent X posts and supporting context.
-- The verification step is intentionally permissive in this MVP: it blocks obviously thin packets, but it does not perform live URL reachability checks.
-- The final report includes an executive summary, theme breakdowns, supporting data, and source citations for UI rendering.
-- Braintrust wraps the agent class here as well, so the multi-agent run is traced end to end when `BRAINTRUST_API_KEY` is configured.
+- The research worker uses xAI's Responses API with `x_search` and `web_search` tools to gather recent posts and supporting context.
+- The verification step is intentionally lightweight in this MVP: it blocks thin packets, but it does not yet perform full link reachability checks.
+- The final report includes an executive summary, theme breakdowns, supporting data, and citations for UI rendering.
 
 ### Objective 8: Failure Pattern Recognition
 
-Description: A live comparison lab that runs the same refund-assistant case before and after remediation for six common agent failure patterns.
+Description: A live comparison lab that runs the same refund-assistant scenario before and after remediation for six common agent failure patterns.
 
 Key details:
 
@@ -141,11 +197,10 @@ Key details:
 - API route: `/api/failure-patterns`
 - Covers six selectable scenarios: context degradation, specification drift, sycophantic confirmation, tool-selection errors, cascading failure, and silent failure.
 - Keeps one shared business domain across all scenarios: DaveCanCode Returns Desk for refunds, returns, replacements, and shipping exceptions.
-- A single request runs both the broken variant and the remediated variant on the server, then returns the two results together for side-by-side rendering.
-- The comparison route uses the wrapped AI stack in `lib/ai.ts`, with real model output rather than authored broken/fixed answer fixtures.
-- Most scenarios run through a shared refund-assistant `ToolLoopAgent` plus deterministic local tools; the cascading-failure scenario uses a packet handoff plus verification/retry step so the failure chain is directly observable.
-- The UI shows the assistant answer, evidence trace, and a deterministic evaluation verdict for each run.
-- Evaluations are programmatic where possible: required fact checks, packet field checks, tool-order checks, intermediate verification checks, and arithmetic checks.
+- One request runs both the broken and remediated variants so the user can compare the outputs side by side.
+- Most scenarios use a shared refund-assistant `ToolLoopAgent` plus deterministic local tools.
+- The cascading-failure scenario uses packet handoff plus verification and retry logic so the failure chain is directly inspectable.
+- The UI shows assistant output, evidence trace, and a deterministic evaluation verdict for each run.
 
 ### Objective 10: Guardrails and Trust Design
 
@@ -155,51 +210,37 @@ Key details:
 
 - Live route: `/guardrails`
 - API route: `/api/guardrails`
-- Packet-driven demo covers three outcomes: a safe pass path, an input-blocked path, and an output-blocked path.
+- The packet-driven demo covers three outcomes: safe pass, input blocked, and output blocked.
 - Input guardrails combine a binary model check for jailbreak or prompt-injection risk with deterministic secret and high-risk PII pattern detection.
-- Output guardrails validate email draft structure and run a safety/appropriateness check, including a block on explicitly demeaning or humiliating requested tone.
-- High-risk action is modeled as a `send_protected_email` tool call that requires explicit approval before execution.
-- The send step is intentionally fake and never delivers a real email; execution returns a simulated result payload for the UI.
-- The conversation renders guardrail result cards and approval UI so each stop or pass decision is visible during the run.
+- Output guardrails validate email draft structure and run a safety and appropriateness check, including a block on explicitly demeaning or humiliating tone requests.
+- The high-risk action is modeled as a `send_protected_email` tool call that requires explicit approval before execution.
+- The send step is simulated only and never delivers a real email.
 
-### Objective 11.1: Braintrust Tracing
+### Objective 11: Observability and Tracing
 
-Description: Tracing is wired into both prompt-based and agent-based AI flows.
-
-Key details:
-
-- `wrapAISDK()` is used for AI SDK function tracing.
-- `wrapAgentClass()` is used so `ToolLoopAgent` runs are traced as agent executions.
-- The prompt-pattern route and the sports-agent stack both send traces when `BRAINTRUST_API_KEY` is configured.
-- This is the current observability foundation for later cost and quality instrumentation work.
-
-### Objective 11.2: Cost Dashboard
-
-Description: A server-rendered observability dashboard that reads Braintrust trace data through BTQL and turns it into a lightweight latency, cost, and token view inside the app.
+Description: Braintrust tracing plus a lightweight cost dashboard.
 
 Key details:
 
 - Live route: `/observability`
-- The page queries Braintrust directly on the server and does not modify the tracing wrapper in `lib/ai.ts`.
-- The dashboard currently treats LLM spans as the billing unit and surfaces total estimated cost, average latency, total tokens, and average cost per query.
+- `wrapAISDK()` is used for AI SDK traces.
+- `wrapAgentClass()` is used so `ToolLoopAgent` flows show up as traced agent executions.
+- The page queries Braintrust on the server and surfaces total estimated cost, average latency, total tokens, and average cost per query.
 - Time windows are switchable between 1, 7, and 14 days.
 - The main sections are daily cost trend, model breakdown, and recent traced queries.
-- Cost by endpoint or feature is intentionally not included in this version because the existing traces do not guarantee a stable route-level metadata field.
 
 ### Objective 12: Token Economics
 
-Description: A combined calculator and routing lab that makes model pricing visible and shows a cost-aware selection between a cheaper and a more capable model.
+Description: A calculator and routing lab that makes model pricing visible and shows cost-aware model selection.
 
 Key details:
 
 - Live route: `/token-economics`
-- The calculator uses a curated model set drawn from AI Gateway model metadata, with an authenticated package lookup when available and a public catalog fallback when it is not.
-- Users can select multiple models, set separate input and output token counts, and compare scenario cost across the selected set.
-- The top summary cards surface selected-model count, equal-weight blended cost, cheapest selected option, and most expensive selected option for the current token scenario.
-- The model grid lays out provider, input price, output price, context window, max output tokens, and scenario total in a compact card format inspired by the AI Gateway models page.
-- The routing lab uses canned prompts only and runs a visible two-step flow: router agent first, fulfillment agent second.
-- The routing summary card shows the chosen model, complexity classification, estimated token counts, estimated routed cost, alternate-model cost, and the delta between them.
-- The fulfillment pair is fixed on purpose for the demo: `openai/gpt-4o-mini` handles simple requests and `openai/gpt-5-mini` handles complex ones.
+- API route: `/api/token-economics`
+- Users can select multiple models, estimate scenario cost, and compare pricing across providers.
+- The routing lab runs a visible two-step flow: router agent first, fulfillment agent second.
+- The current fulfillment pair is intentionally fixed for the demo: `openai/gpt-4o-mini` for simpler work and `openai/gpt-5-mini` for more complex work.
+- The summary card shows the chosen model, complexity classification, estimated token counts, estimated routed cost, alternate-model cost, and the delta.
 
 ### Objective 14: MCP Integration
 
@@ -212,6 +253,25 @@ Key details:
 - Discovery route: `/api/mcp-tools`
 - Agent route: `/api/mcp-agent`
 - The MCP server exposes `list_categories`, `get_random_joke`, and `search_jokes`.
-- The agent does not hardcode those tools locally. It connects to the MCP server with `@ai-sdk/mcp`, fetches the tool list dynamically, and passes the discovered tools into `ToolLoopAgent` for the current request.
-- The UI renders discovered tool names and tool call cards so the MCP layer is visible instead of hidden behind a generic wrapper.
-- Request path: UI -> agent route -> ToolLoopAgent -> MCP client -> MCP server -> Chuck Norris API.
+- The agent does not hardcode local equivalents. It connects to the MCP server with `@ai-sdk/mcp`, fetches the tool list dynamically, and passes the discovered tools into `ToolLoopAgent` for the current request.
+- The UI renders discovered tool names and tool call cards so the MCP layer stays visible instead of disappearing behind a generic wrapper.
+- Request path: UI -> agent route -> MCP client -> MCP server -> Chuck Norris API.
+
+## Planned Work After The Current Slice
+
+The next major sequence is intentionally connected rather than random feature work:
+
+- Objective 4 builds the full RAG pipeline on top of the current ARC Raiders retrieval substrate.
+- Objective 5 adds the eval harness and retrieval plus generation scorecards.
+- Objective 9 generalizes the same retrieval system into a multi-source context architecture.
+- Objective 13 tests whether fine-tuning helps a narrow change-extraction task more than prompt or retrieval tuning alone.
+
+That continuity matters. The retrieval, schema, chunking, and evaluation work is being built so each later objective can reuse earlier infrastructure instead of resetting the stack every time.
+
+## Good Files To Read Next
+
+- `lib/ai.ts` for the shared AI runtime wrapper.
+- `lib/demo-items.ts` for the objective-to-route map used on the landing page.
+- `lib/embeddings/` for ingestion, normalization, chunking, and semantic search.
+- `app/api/` for the actual route surfaces behind each demo.
+- `../../docs/arc-raiders-embeddings-vector-search-report.md` for the detailed write-up behind the embeddings benchmark.

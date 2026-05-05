@@ -1,159 +1,108 @@
-# Turborepo starter
+# ai-engineer
 
-This Turborepo starter is maintained by the Turborepo core team.
+`ai-engineer` is a working portfolio repo about building AI products with specifications, schema validation, retrieval pipelines, tool use, guardrails, observability, and cost controls.
 
-## Using this example
+If you are technical, this repo is a TypeScript and Next.js skills lab that demonstrates how I think about LLM systems as software systems. 
 
-Run the following command:
+If you are not technical, the short version is this: each demo is designed to show that I can make AI features more reliable, measurable, and easier to ship in a real product.
 
-```sh
-npx create-turbo@latest
+## What The Project Covers
+
+AI engineering spans multiple disciplines. This repo is organized to show how those disciplines fit together in one product stack.
+
+| Capability | Technical focus | Why it matters |
+| --- | --- | --- |
+| Specification precision | Prompt contracts, constraints, schemas, and typed outputs | Makes model behavior easier to validate and integrate into software. |
+| Prompt patterns | Zero-shot, few-shot, and chain-of-thought comparisons | Shows how prompt strategy changes answer quality and failure modes. |
+| Retrieval and vector search | Chunking, embeddings, metadata, and semantic search | Grounds outputs in source material instead of unsupported guesses. |
+| Agents | Tool use, memory, planning, and verification | Enables multi-step task execution with traceable control flow. |
+| Guardrails | Input screening, output validation, and approval flows | Reduces safety, trust, and operational risk. |
+| Observability and token economics | Tracing, latency, usage, and model routing | Makes runtime quality and cost measurable. |
+| MCP | Tool discovery and integration | Standardizes how agents connect to external tools. |
+
+The repo is broad by design. The demos follow the AI development lifecycle: specify behavior, compare prompting strategies, build retrieval, add agents, harden them, measure them, and package the system clearly.
+
+## Objective Scope
+
+| Objective | Area | Scope |
+| --- | --- | --- |
+| 1 | Specification precision | System prompt library, schema-driven structured output, and a dedicated demo route for typed model responses. |
+| 2 | Prompt engineering patterns | Side-by-side comparison of zero-shot, few-shot, and chain-of-thought prompting on the same task. |
+| 3 | Embeddings and vector search | ARC Raiders ingest, normalization, chunking, embedding, indexing, chunking evaluation, and semantic search with citations. |
+| 4 | RAG pipeline | Streamed answer generation over the ARC Raiders corpus, starting with vector retrieval and expanding to hybrid search and reranking. |
+| 5 | Evaluation | Golden dataset, retrieval metrics, LLM-as-a-judge scoring, and Braintrust experiment tracking for the RAG stack. |
+| 6 | Single agent | A ReAct-style sports agent with tools, multi-step execution, and long-term memory. |
+| 7 | Multi-agent | Planner, research, verification, and report-writing agents operating as a coordinated workflow. |
+| 8 | Failure patterns | Six common agent failure modes paired with remediations and side-by-side demonstrations. |
+| 9 | Context architecture | Multi-source retrieval with source-aware metadata filters, entity and date filtering, and context-packing controls. |
+| 10 | Guardrails | Input screening, output validation, and human approval for higher-risk actions. |
+| 11 | Observability | Braintrust tracing plus a dashboard for latency, token usage, and estimated cost. |
+| 12 | Token economics | Model cost calculator and cost-aware routing between cheaper and more capable models. |
+| 13 | Fine-tuning | A focused GPT-4o-mini fine-tuning experiment for patch-note change extraction, evaluated against base and retrieval-assisted baselines. |
+| 14 | MCP | Hosted HTTP MCP server and an agent client that discovers tools dynamically at runtime. |
+| 15 | Deploy and ship | Portfolio packaging, demo polish, public deployment, and the broader project narrative. |
+
+Objectives 3, 4, 5, 9, and 13 are designed as one continuous retrieval program. Objective 3 establishes the data and indexing layer, Objective 4 adds answer generation, Objective 5 adds measurement, Objective 9 expands the retrieval model across source types, and Objective 13 reuses the same corpus for a narrow fine-tuning experiment.
+
+## Retrieval Track
+
+The ARC Raiders retrieval work is the clearest example of how the repo is structured.
+
+Objective 3 establishes the retrieval foundation for Objectives 4, 5, 9, and 13. Its scope includes approved source selection, Firecrawl ingest, normalization rules, chunk metadata, artifact caching in Redis, semantic search over Upstash Vector, and a benchmark for chunking strategy. The same document and chunk schema is intended to carry forward into the RAG app, eval harness, and context-architecture work.
+
+On the approved Metaforge item catalog benchmark, semantic chunking produced the strongest result: `recall@3` of `9/10`, compared with `8/10` for overlapping chunking and `7/10` for fixed chunking. That result established semantic chunking as the default strategy for the current retrieval stack.
+
+## Who This Repo Is For
+
+- Hiring managers and recruiters who want a fast way to understand what kind of AI engineering work I can do.
+- Engineering leads who care about implementation quality, tradeoff awareness, and production-minded design.
+- Other AI engineers who want to see how the demos are wired and how the repo is organized.
+- Curious non-specialists who want a more concrete picture of what the role actually involves beyond prompt writing.
+
+## Quick Start
+
+This is a pnpm + Turborepo monorepo. The main app lives in `apps/web`.
+
+Requirements:
+
+- Node 22+
+- pnpm 9+
+
+Run it locally:
+
+```bash
+pnpm install
+cp apps/web/.sample.env apps/web/.env.local
+pnpm dev
 ```
 
-## What's inside?
+Useful follow-up commands:
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+pnpm --filter web dev
+pnpm --filter web build
+pnpm --filter web check-types
+pnpm --filter web lint
 ```
 
-Without global `turbo`, use your package manager:
+## Repo Map
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+| Path | What it is |
+| --- | --- |
+| `apps/web` | The main interactive Next.js app with the live demos. |
+| `apps/docs` | A secondary docs app scaffold reserved for future docs-specific work. |
+| `docs` | Working plans, reports, and longer write-ups that explain design decisions. |
+| `packages/ui` | Shared UI components used across the monorepo. |
+| `packages/eslint-config` | Shared lint configuration. |
+| `packages/typescript-config` | Shared TypeScript configuration. |
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Read This Next
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+ [apps/web/README.md](apps/web/README.md) for the app-specific guide, live route inventory, environment variables, and implementation notes.
 
-```sh
-turbo build --filter=docs
-```
 
-Without global `turbo`:
+## Current Development Priorities
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+The repository already covers prompt design, retrieval basics, agents, guardrails, MCP, tracing, and cost-aware runtime decisions. The next major delivery is the retrieval-to-RAG-to-evaluation sequence, built on top of the existing ARC Raiders retrieval foundation.
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+The remaining work is focused on completing that connected stack and extending it into context architecture and a narrow fine-tuning comparison.

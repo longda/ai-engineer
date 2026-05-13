@@ -20,6 +20,7 @@ If you are less technical, the short version is simpler: each page demonstrates 
 | `/specification-precision` | 1 | Structured output with prompt catalogs and schema-constrained results. |
 | `/prompt-patterns` | 2 | Zero-shot, few-shot, and chain-of-thought prompt comparisons on the same task. |
 | `/embeddings` | 3 | ARC Raiders ingestion, chunking comparison, embeddings, and semantic search. |
+| `/rag` | 4 | Vector-only, hybrid, and reranked RAG comparisons with streamed answers, retrieval evidence, and citations. |
 | `/agent` | 6 | A tool-using ReAct-style assistant with long-term memory. |
 | `/multi-agent` | 7 | Planner, research, verification, and report-writing agents working as a system. |
 | `/failure-patterns` | 8 | Before-and-after demos for six common agent failure modes. |
@@ -32,7 +33,6 @@ If you are less technical, the short version is simpler: each page demonstrates 
 
 | Objective | Planned area | Current status |
 | --- | --- | --- |
-| 4 | RAG pipeline | Next major build on top of the ARC Raiders retrieval foundation. |
 | 5 | Evaluation | Planned as the measurement layer for the RAG app. |
 | 9 | Context architecture | Planned as the multi-source extension of the retrieval stack. |
 | 13 | Fine-tuning | Planned as a narrow experiment, not the default runtime path. |
@@ -157,6 +157,21 @@ Key details:
 - The chunking lab compares fixed, overlapping, and semantic chunking on the approved Metaforge catalog benchmark source at `https://metaforge.app/arc-raiders/database/items/page/1`.
 - After fixing stale batch-scrape cache mapping, semantic chunking now wins the benchmark with `recall@3` of `9/10`, ahead of overlapping at `8/10` and fixed at `7/10`.
 - The ingest summary exposes cache store, hit count, and miss count so refresh behavior is visible in the UI.
+
+### Objective 4: RAG Pipeline
+
+Description: A first-pass ARC Raiders RAG experience built directly on the Objective 3 retrieval stack.
+
+Key details:
+
+- Live route: `/rag`
+- API route: `/api/rag`
+- The route reuses the Objective 3 semantic search path, persists the same chunk corpus for BM25, and adds a selectable hybrid retrieval path.
+- Hybrid retrieval uses `wink-bm25-text-search` plus reciprocal rank fusion over the same Objective 3 chunks.
+- The reranked mode uses Cohere reranking through the Vercel AI Gateway before answer generation.
+- The UI shows the streamed answer alongside retrieved chunks, scores, per-stage rank signals, source links, and a same-query comparison panel.
+- The current scope is intentionally narrow: gear, ammo, material, and inventory lookup with visible citation backing.
+- The measurement endpoint compares vector-only, hybrid, and hybrid-plus-rerank retrieval on the same built-in query set.
 
 ### Objective 6: Single Agent and Long-Term Memory
 

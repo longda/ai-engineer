@@ -29,6 +29,7 @@ import type {
   NormalizedSourceDocument,
   SourceType,
 } from "./types";
+import { writeIndexedChunkCorpus } from "./corpus-store";
 import { batchArray, hashString } from "./utils";
 import { deleteChunksByPrefix, upsertChunks } from "./vector";
 
@@ -352,6 +353,9 @@ export async function ingestArcRaidersCorpus(options: IngestOptions = {}) {
     options.repairExisting === true;
 
   await upsertChunks(embeddedChunks, { reset: options.reset ?? !isScopedIngest });
+  await writeIndexedChunkCorpus(embeddedChunks, {
+    reset: options.reset ?? !isScopedIngest,
+  });
 
   const summary: IngestRunSummary = {
     namespace: VECTOR_NAMESPACE,

@@ -17,6 +17,7 @@ export const {
   streamObject,
   embed,
   embedMany,
+  rerank,
 } = wrapped;
 
 // Wrap ToolLoopAgent class so all agent runs are traced in Braintrust

@@ -32,7 +32,7 @@ export const DEMO_ITEMS: DemoItem[] = [
     id: "embeddings",
     number: 3,
     title: "Embeddings & vector search",
-    description: "Semantic search API with embed / embedMany and a vector store.",
+    description: "Semantic search API with embed, embedMany, and a vector store.",
     href: "/embeddings",
     status: "live",
   },
@@ -41,7 +41,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 4,
     title: "RAG pipeline",
     description: "End-to-end retrieve-augment-generate with streaming responses.",
-    status: "soon",
+    href: "/rag",
+    status: "live",
   },
   {
     id: "evaluation",

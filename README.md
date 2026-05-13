@@ -56,6 +56,8 @@ The ARC Raiders retrieval work is the clearest example of how the repo is struct
 
 Objective 3 establishes the retrieval foundation for Objectives 4, 5, 9, and 13. Its scope includes approved source selection, Firecrawl ingest, normalization rules, chunk metadata, artifact caching in Redis, semantic search over Upstash Vector, and a benchmark for chunking strategy. The same document and chunk schema is intended to carry forward into the RAG app, eval harness, and context-architecture work.
 
+Objective 4 now has a shipped RAG route in the web app with selectable vector-only, hybrid, and hybrid-plus-rerank retrieval, all grounded in that same index and exposed with visible context, citations, and comparison output in the UI.
+
 On the approved Metaforge item catalog benchmark, semantic chunking produced the strongest result: `recall@3` of `9/10`, compared with `8/10` for overlapping chunking and `7/10` for fixed chunking. That result established semantic chunking as the default strategy for the current retrieval stack.
 
 ## Who This Repo Is For

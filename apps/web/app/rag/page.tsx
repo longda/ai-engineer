@@ -4,7 +4,6 @@ import { FormEvent, useMemo, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import {
-  BotIcon,
   FileTextIcon,
   LoaderCircleIcon,
   SearchIcon,

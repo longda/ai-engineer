@@ -21,6 +21,7 @@ If you are less technical, the short version is simpler: each page demonstrates 
 | `/prompt-patterns` | 2 | Zero-shot, few-shot, and chain-of-thought prompt comparisons on the same task. |
 | `/embeddings` | 3 | ARC Raiders ingestion, chunking comparison, embeddings, and semantic search. |
 | `/rag` | 4 | Vector-only, hybrid, and reranked RAG comparisons with streamed answers, retrieval evidence, and citations. |
+| `/evaluation` | 5 | A RAG evaluation harness with side-by-side variant comparison, retrieval metrics, LLM judge scores, and Braintrust experiment logging. |
 | `/agent` | 6 | A tool-using ReAct-style assistant with long-term memory. |
 | `/multi-agent` | 7 | Planner, research, verification, and report-writing agents working as a system. |
 | `/failure-patterns` | 8 | Before-and-after demos for six common agent failure modes. |
@@ -33,7 +34,6 @@ If you are less technical, the short version is simpler: each page demonstrates 
 
 | Objective | Planned area | Current status |
 | --- | --- | --- |
-| 5 | Evaluation | Planned as the measurement layer for the RAG app. |
 | 9 | Context architecture | Planned as the multi-source extension of the retrieval stack. |
 | 13 | Fine-tuning | Planned as a narrow experiment, not the default runtime path. |
 | 15 | Deploy and ship | Repo narrative, demo polish, and public packaging are still in progress. |
@@ -173,6 +173,22 @@ Key details:
 - The current scope is intentionally narrow: gear, ammo, material, and inventory lookup with visible citation backing.
 - The measurement endpoint compares vector-only, hybrid, and hybrid-plus-rerank retrieval on the same built-in query set.
 
+### Objective 5: Evaluation and Quality Judgment
+
+Description: A measurement layer for the ARC Raiders RAG stack that runs a labeled evaluation dataset through each retrieval variant and scores both retrieval quality and answer quality.
+
+Key details:
+
+- Live route: `/evaluation`
+- API route: `/api/evaluation`
+- Uses a repo-owned ARC Raiders v1 evaluation dataset instead of ad hoc manual testing.
+- Runs the same three retrieval variants as the RAG demo: vector-only, hybrid, and hybrid-plus-rerank.
+- Splits scoring into deterministic retrieval metrics and LLM-judged generation metrics.
+- Retrieval scoring currently includes recall, mean reciprocal rank, source-type coverage, and entity coverage over the expected evidence targets.
+- Generation scoring includes a source-line compliance check plus judge-based correctness, relevance, and hallucination-risk scores.
+- Each run is logged to Braintrust as an experiment with variant metadata so the results are traceable outside the UI.
+- The page includes a summary comparison table, per-variant scorecards, and weakest-case review panels for quick analysis.
+
 ### Objective 6: Single Agent and Long-Term Memory
 
 Description: A sports news assistant that uses a ReAct-style loop to search, reason, call tools, and remember user facts across sessions.
@@ -277,7 +293,6 @@ Key details:
 The next major sequence is intentionally connected rather than random feature work:
 
 - Objective 4 builds the full RAG pipeline on top of the current ARC Raiders retrieval substrate.
-- Objective 5 adds the eval harness and retrieval plus generation scorecards.
 - Objective 9 generalizes the same retrieval system into a multi-source context architecture.
 - Objective 13 tests whether fine-tuning helps a narrow change-extraction task more than prompt or retrieval tuning alone.
 

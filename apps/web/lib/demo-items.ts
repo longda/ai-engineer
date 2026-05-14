@@ -49,7 +49,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 5,
     title: "Evaluation",
     description: "Eval harness with LLM-as-a-judge and retrieval metrics.",
-    status: "soon",
+    href: "/evaluation",
+    status: "live",
   },
   {
     id: "single-agent",

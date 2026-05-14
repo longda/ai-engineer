@@ -36,7 +36,7 @@ The repo is broad by design. The demos follow the AI development lifecycle: spec
 | 2 | Prompt engineering patterns | Side-by-side comparison of zero-shot, few-shot, and chain-of-thought prompting on the same task. |
 | 3 | Embeddings and vector search | ARC Raiders ingest, normalization, chunking, embedding, indexing, chunking evaluation, and semantic search with citations. |
 | 4 | RAG pipeline | Streamed answer generation over the ARC Raiders corpus, starting with vector retrieval and expanding to hybrid search and reranking. |
-| 5 | Evaluation | Golden dataset, retrieval metrics, LLM-as-a-judge scoring, and Braintrust experiment tracking for the RAG stack. |
+| 5 | Evaluation | A live RAG evaluation harness with a labeled ARC Raiders dataset, retrieval metrics, LLM-as-a-judge scoring, and Braintrust experiment tracking across vector-only, hybrid, and reranked variants. |
 | 6 | Single agent | A ReAct-style sports agent with tools, multi-step execution, and long-term memory. |
 | 7 | Multi-agent | Planner, research, verification, and report-writing agents operating as a coordinated workflow. |
 | 8 | Failure patterns | Six common agent failure modes paired with remediations and side-by-side demonstrations. |
@@ -57,6 +57,8 @@ The ARC Raiders retrieval work is the clearest example of how the repo is struct
 Objective 3 establishes the retrieval foundation for Objectives 4, 5, 9, and 13. Its scope includes approved source selection, Firecrawl ingest, normalization rules, chunk metadata, artifact caching in Redis, semantic search over Upstash Vector, and a benchmark for chunking strategy. The same document and chunk schema is intended to carry forward into the RAG app, eval harness, and context-architecture work.
 
 Objective 4 now has a shipped RAG route in the web app with selectable vector-only, hybrid, and hybrid-plus-rerank retrieval, all grounded in that same index and exposed with visible context, citations, and comparison output in the UI.
+
+Objective 5 now adds the measurement layer on top of that same stack: a repo-owned ARC Raiders evaluation dataset, deterministic retrieval metrics, LLM-judged generation scoring, and Braintrust-backed experiment runs exposed through the app. The evaluation UI makes it easy to compare vector-only, hybrid, and hybrid-plus-rerank behavior in one place instead of relying on anecdotal spot checks.
 
 On the approved Metaforge item catalog benchmark, semantic chunking produced the strongest result: `recall@3` of `9/10`, compared with `8/10` for overlapping chunking and `7/10` for fixed chunking. That result established semantic chunking as the default strategy for the current retrieval stack.
 
@@ -113,4 +115,4 @@ pnpm --filter web lint
 
 The repository already covers prompt design, retrieval basics, agents, guardrails, MCP, tracing, and cost-aware runtime decisions. The next major delivery is the retrieval-to-RAG-to-evaluation sequence, built on top of the existing ARC Raiders retrieval foundation.
 
-The remaining work is focused on completing that connected stack and extending it into context architecture and a narrow fine-tuning comparison.
+The remaining work is focused on extending that connected stack into context architecture and a narrow fine-tuning comparison.

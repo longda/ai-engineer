@@ -294,7 +294,13 @@ export async function measureRagRetrievalModes(
   return { queries, rows };
 }
 
-export function buildRagSystemPrompt(context: RagContextPacket) {
+export function buildRagSystemPrompt(
+  context: RagContextPacket,
+  options: {
+    promptVersion?: string;
+  } = {}
+) {
+  const promptVersion = options.promptVersion ?? "rag-v1";
   const contextBlock = context.citations
     .map((citation, index) => {
       const entityNames = citation.entityNames.length
@@ -320,17 +326,37 @@ export function buildRagSystemPrompt(context: RagContextPacket) {
     })
     .join("\n\n");
 
-  return `You are the ARC Raiders retrieval assistant for the RAG demo.
+  const instructions =
+    promptVersion === "rag-v2"
+      ? [
+          "You are the ARC Raiders retrieval assistant for the RAG demo.",
+          "",
+          "Answer only from the retrieved context below.",
+          "",
+          "Rules:",
+          "- Start with the direct answer in the first sentence.",
+          "- Keep the answer grounded in the provided evidence.",
+          "- If the evidence is incomplete, say that the corpus does not clearly support the missing part.",
+          "- Do not invent item stats, categories, patch details, or comparisons.",
+          "- If the user asks for a comparison, only compare properties that are explicitly supported by the retrieved excerpts.",
+          "- If the corpus supports only part of the request, separate supported facts from unsupported gaps clearly.",
+          "- End with a short \"Sources:\" line that cites the relevant source titles in square brackets, for example [1] [3].",
+        ].join("\n")
+      : [
+          "You are the ARC Raiders retrieval assistant for the RAG demo.",
+          "",
+          "Answer only from the retrieved context below.",
+          "",
+          "Rules:",
+          "- Keep the answer grounded in the provided evidence.",
+          "- If the evidence is incomplete, say that the corpus does not clearly support the missing part.",
+          "- Do not invent item stats, categories, patch details, or comparisons.",
+          "- Prefer concise, direct answers.",
+          "- If the user asks for a comparison, only compare properties that are explicitly supported by the retrieved excerpts.",
+          "- End with a short \"Sources:\" line that cites the relevant source titles in square brackets, for example [1] [3].",
+        ].join("\n");
 
-Answer only from the retrieved context below.
-
-Rules:
-- Keep the answer grounded in the provided evidence.
-- If the evidence is incomplete, say that the corpus does not clearly support the missing part.
-- Do not invent item stats, categories, patch details, or comparisons.
-- Prefer concise, direct answers.
-- If the user asks for a comparison, only compare properties that are explicitly supported by the retrieved excerpts.
-- End with a short "Sources:" line that cites the relevant source titles in square brackets, for example [1] [3].
+  return `${instructions}
 
 Retrieved context:
 ${contextBlock || "No retrieved context was available."}`;

@@ -233,23 +233,26 @@ function asErrorMessage(error: unknown) {
 }
 
 function averageScores(results: RagEvalCaseResult[]) {
-  const totals = new Map<string, { sum: number; count: number }>();
+  const totals = new Map<string, number>();
+  const metricNames = new Set<string>();
 
   for (const result of results) {
-    for (const [name, score] of Object.entries(result.scores)) {
-      if (typeof score !== "number") {
-        continue;
-      }
+    for (const name of Object.keys(result.scores)) {
+      metricNames.add(name);
+    }
+  }
 
-      const existing = totals.get(name) ?? { sum: 0, count: 0 };
-      existing.sum += score;
-      existing.count += 1;
-      totals.set(name, existing);
+  for (const result of results) {
+    for (const name of metricNames) {
+      const score = result.scores[name];
+      const existing = totals.get(name) ?? 0;
+
+      totals.set(name, existing + (typeof score === "number" ? score : 0));
     }
   }
 
   return Object.fromEntries(
-    [...totals.entries()].map(([name, value]) => [name, value.sum / value.count])
+    [...totals.entries()].map(([name, sum]) => [name, sum / results.length])
   );
 }
 

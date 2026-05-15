@@ -60,6 +60,8 @@ Objective 4 now has a shipped RAG route in the web app with selectable vector-on
 
 Objective 5 now adds the measurement layer on top of that same stack: a repo-owned ARC Raiders evaluation dataset, deterministic retrieval metrics, LLM-judged generation scoring, and Braintrust-backed experiment runs exposed through the app. The evaluation UI makes it easy to compare vector-only, hybrid, and hybrid-plus-rerank behavior in one place instead of relying on anecdotal spot checks.
 
+Objective 9 now extends that same retrieval system into a source-aware context architecture route with source-type, entity, topic, and date filtering, plus explicit separation between persistent retrieved evidence and per-session task context. It keeps the same ARC Raiders corpus contract while making source routing and context packing visible in the UI.
+
 On the approved Metaforge item catalog benchmark, semantic chunking produced the strongest result: `recall@3` of `9/10`, compared with `8/10` for overlapping chunking and `7/10` for fixed chunking. That result established semantic chunking as the default strategy for the current retrieval stack.
 
 ## Who This Repo Is For
@@ -113,6 +115,6 @@ pnpm --filter web lint
 
 ## Current Development Priorities
 
-The repository already covers prompt design, retrieval basics, agents, guardrails, MCP, tracing, and cost-aware runtime decisions. The next major delivery is the retrieval-to-RAG-to-evaluation sequence, built on top of the existing ARC Raiders retrieval foundation.
+The repository already covers prompt design, retrieval basics, RAG, evaluation, context architecture, agents, guardrails, MCP, tracing, and cost-aware runtime decisions.
 
-The remaining work is focused on extending that connected stack into context architecture and a narrow fine-tuning comparison.
+The remaining work is focused on a narrow fine-tuning comparison, deploy-and-ship polish, and tightening the broader repo narrative around the demos that are already live.

@@ -4,12 +4,17 @@ import { gateway } from "@ai-sdk/gateway";
 import { rerank } from "@/lib/ai";
 import { readIndexedChunkCorpus } from "@/lib/embeddings/corpus-store";
 import { runSemanticSearch } from "@/lib/embeddings/search";
-import type { IndexedChunk, SemanticSearchResult } from "@/lib/embeddings/types";
+import type {
+  IndexedChunk,
+  SemanticSearchResult,
+  SourceType,
+} from "@/lib/embeddings/types";
 import type {
   RagCitation,
   RagContextPacket,
   RagMeasurementPacket,
   RagMeasurementRow,
+  RagRetrievalFilters,
   RagRetrievalMode,
 } from "./types";
 
@@ -31,6 +36,135 @@ type Bm25SearchEngine = ReturnType<typeof bm25>;
 let cachedBm25CorpusSignature: string | null = null;
 let cachedBm25Engine: Bm25SearchEngine | null = null;
 let cachedBm25Docs = new Map<string, IndexedChunk>();
+
+function normalizeFilterTerm(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function matchesAnyFilterTerm(values: string[], filters?: string[]) {
+  if (!filters || filters.length === 0) {
+    return true;
+  }
+
+  const normalizedValues = values.map((value) => normalizeFilterTerm(value));
+
+  return filters.some((filter) => normalizedValues.includes(normalizeFilterTerm(filter)));
+}
+
+function escapeUpstashFilterLiteral(value: string) {
+  return value.replaceAll("'", "''");
+}
+
+function buildSourceTypeFilter(sourceTypes: SourceType[]) {
+  if (sourceTypes.length === 1) {
+    const [sourceType] = sourceTypes;
+    return `sourceType = '${escapeUpstashFilterLiteral(sourceType ?? "")}'`;
+  }
+
+  return `(${sourceTypes
+    .map((sourceType) => `sourceType = '${escapeUpstashFilterLiteral(sourceType)}'`)
+    .join(" OR ")})`;
+}
+
+function buildContainsAnyFilter(field: "entityNames" | "tags", values: string[]) {
+  if (values.length === 1) {
+    const [value] = values;
+    return `${field} CONTAINS '${escapeUpstashFilterLiteral(value ?? "")}'`;
+  }
+
+  return `(${values
+    .map((value) => `${field} CONTAINS '${escapeUpstashFilterLiteral(value)}'`)
+    .join(" OR ")})`;
+}
+
+function buildVectorMetadataFilter(filters?: RagRetrievalFilters) {
+  if (!filters) {
+    return undefined;
+  }
+
+  const clauses: string[] = [];
+
+  if (filters.sourceTypes?.length) {
+    clauses.push(buildSourceTypeFilter(filters.sourceTypes));
+  }
+
+  if (filters.entityNames?.length) {
+    clauses.push(buildContainsAnyFilter("entityNames", filters.entityNames));
+  }
+
+  if (filters.tags?.length) {
+    clauses.push(buildContainsAnyFilter("tags", filters.tags));
+  }
+
+  if (filters.publishedAfter) {
+    clauses.push(`publishedAt >= '${escapeUpstashFilterLiteral(filters.publishedAfter)}'`);
+  }
+
+  if (filters.publishedBefore) {
+    clauses.push(`publishedAt <= '${escapeUpstashFilterLiteral(filters.publishedBefore)}'`);
+  }
+
+  return clauses.length > 0 ? clauses.join(" AND ") : undefined;
+}
+
+function chunkMatchesFilters(chunk: IndexedChunk, filters?: RagRetrievalFilters) {
+  if (!filters) {
+    return true;
+  }
+
+  if (
+    filters.sourceTypes?.length &&
+    !filters.sourceTypes.includes(chunk.sourceType)
+  ) {
+    return false;
+  }
+
+  if (!matchesAnyFilterTerm(chunk.entityNames, filters.entityNames)) {
+    return false;
+  }
+
+  if (!matchesAnyFilterTerm(chunk.tags, filters.tags)) {
+    return false;
+  }
+
+  if (filters.publishedAfter) {
+    if (!chunk.publishedAt || chunk.publishedAt < filters.publishedAfter) {
+      return false;
+    }
+  }
+
+  if (filters.publishedBefore) {
+    if (!chunk.publishedAt || chunk.publishedAt > filters.publishedBefore) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function sanitizeFilters(filters?: RagRetrievalFilters) {
+  if (!filters) {
+    return undefined;
+  }
+
+  const sourceTypes = filters.sourceTypes?.length
+    ? [...new Set(filters.sourceTypes)]
+    : undefined;
+  const entityNames = filters.entityNames
+    ?.map((value) => value.trim())
+    .filter(Boolean);
+  const tags = filters.tags?.map((value) => value.trim()).filter(Boolean);
+
+  const nextFilters: RagRetrievalFilters = {
+    ...(sourceTypes?.length ? { sourceTypes } : {}),
+    ...(entityNames?.length ? { entityNames } : {}),
+    ...(tags?.length ? { tags } : {}),
+    ...(filters.publishedAfter ? { publishedAfter: filters.publishedAfter } : {}),
+    ...(filters.publishedBefore ? { publishedBefore: filters.publishedBefore } : {}),
+  };
+
+  return Object.keys(nextFilters).length > 0 ? nextFilters : undefined;
+}
 
 function tokenize(text: string) {
   return text
@@ -59,8 +193,14 @@ function createCitationFromSemanticResult(
     title: result.metadata.title,
     url: result.metadata.url,
     sourceType: result.metadata.sourceType,
+    sourceName: result.metadata.sourceName,
+    contentType: result.metadata.contentType,
     entityType: result.metadata.entityType,
     entityNames: result.metadata.entityNames,
+    publishedAt: result.metadata.publishedAt,
+    freshnessTier: result.metadata.freshnessTier,
+    tags: result.metadata.tags,
+    tokenEstimate: result.metadata.tokenEstimate,
     score: result.score,
     retrievalScore: result.score,
     chunkText: result.chunkText,
@@ -78,8 +218,14 @@ function createCitationFromIndexedChunk(
     title: chunk.title,
     url: chunk.url,
     sourceType: chunk.sourceType,
+    sourceName: chunk.sourceName,
+    contentType: chunk.contentType,
     entityType: chunk.entityType,
     entityNames: chunk.entityNames,
+    publishedAt: chunk.publishedAt,
+    freshnessTier: chunk.freshnessTier,
+    tags: chunk.tags,
+    tokenEstimate: chunk.tokenEstimate,
     score: keywordScore,
     retrievalScore: keywordScore,
     chunkText: chunk.chunkText,
@@ -87,8 +233,7 @@ function createCitationFromIndexedChunk(
   };
 }
 
-async function getBm25Index() {
-  const corpus = await readIndexedChunkCorpus();
+function buildBm25IndexFromCorpus(corpus: IndexedChunk[]) {
   const corpusSignature = corpus
     .map((chunk) => `${chunk.chunkId}:${chunk.chunkText.length}`)
     .join("|");
@@ -126,8 +271,59 @@ async function getBm25Index() {
   return { engine, docs };
 }
 
-async function runBm25Search(query: string, topK: number) {
-  const { engine, docs } = await getBm25Index();
+async function getBm25Index(filters?: RagRetrievalFilters) {
+  const corpus = await readIndexedChunkCorpus();
+  const filteredCorpus = filters
+    ? corpus.filter((chunk) => chunkMatchesFilters(chunk, filters))
+    : corpus;
+
+  if (filteredCorpus.length === 0) {
+    const engine = bm25();
+    engine.defineConfig({
+      fldWeights: {
+        title: 2,
+        chunkText: 3,
+        entityNames: 2,
+        tags: 1,
+      },
+    });
+    engine.definePrepTasks([tokenize]);
+    engine.consolidate();
+    return { engine, docs: new Map<string, IndexedChunk>() };
+  }
+
+  if (!filters) {
+    return buildBm25IndexFromCorpus(filteredCorpus);
+  }
+
+  const engine = bm25();
+  engine.defineConfig({
+    fldWeights: {
+      title: 2,
+      chunkText: 3,
+      entityNames: 2,
+      tags: 1,
+    },
+  });
+  engine.definePrepTasks([tokenize]);
+
+  const docs = new Map<string, IndexedChunk>();
+
+  for (const chunk of filteredCorpus) {
+    docs.set(chunk.chunkId, chunk);
+    engine.addDoc(buildBm25Doc(chunk), chunk.chunkId);
+  }
+
+  engine.consolidate();
+  return { engine, docs };
+}
+
+async function runBm25Search(
+  query: string,
+  topK: number,
+  filters?: RagRetrievalFilters
+) {
+  const { engine, docs } = await getBm25Index(filters);
   const results = engine.search(query, topK) as Array<[string, number]>;
 
   return results
@@ -227,34 +423,74 @@ async function retrieveVectorCandidates(query: string, topK: number) {
   );
 }
 
+async function retrieveFilteredVectorCandidates(
+  query: string,
+  topK: number,
+  filters?: RagRetrievalFilters
+) {
+  const results = await runSemanticSearch(query, topK, {
+    filter: buildVectorMetadataFilter(filters),
+  });
+
+  return results
+    .map((result, index) => createCitationFromSemanticResult(result, index + 1))
+    .filter((result) => chunkMatchesFilters({
+      chunkId: result.chunkId,
+      documentId: result.chunkId,
+      chunkIndex: 0,
+      chunkStrategy: "semantic",
+      chunkText: result.chunkText,
+      charCount: result.chunkText.length,
+      tokenEstimate: result.tokenEstimate,
+      embeddingModel: "",
+      sourceType: result.sourceType,
+      sourceName: result.sourceName,
+      url: result.url,
+      title: result.title,
+      contentType: result.contentType,
+      entityType: result.entityType,
+      entityNames: result.entityNames,
+      publishedAt: result.publishedAt,
+      fetchedAt: result.publishedAt ?? new Date(0).toISOString(),
+      freshnessTier: result.freshnessTier,
+      tags: result.tags,
+    }, filters));
+}
+
 export async function retrieveRagContext(
   query: string,
   options: {
     topK?: number;
     contextLimit?: number;
     retrievalMode?: RagRetrievalMode;
+    filters?: RagRetrievalFilters;
   } = {}
 ): Promise<RagContextPacket> {
   const topK = options.topK ?? RAG_RETRIEVAL_TOP_K;
   const contextLimit = options.contextLimit ?? RAG_CONTEXT_LIMIT;
   const retrievalMode = options.retrievalMode ?? "vector-only";
-  const vectorCandidates = await retrieveVectorCandidates(query, topK);
+  const filters = sanitizeFilters(options.filters);
+  const vectorCandidates = filters
+    ? await retrieveFilteredVectorCandidates(query, topK, filters)
+    : await retrieveVectorCandidates(query, topK);
 
   if (retrievalMode === "vector-only") {
     return {
       query,
       retrievalMode,
+      ...(filters ? { filters } : {}),
       citations: vectorCandidates.slice(0, contextLimit),
     };
   }
 
-  const keywordCandidates = await runBm25Search(query, topK);
+  const keywordCandidates = await runBm25Search(query, topK, filters);
   const hybridCandidates = applyRrf(vectorCandidates, keywordCandidates);
 
   if (retrievalMode === "hybrid") {
     return {
       query,
       retrievalMode,
+      ...(filters ? { filters } : {}),
       citations: hybridCandidates.slice(0, contextLimit),
     };
   }
@@ -262,6 +498,7 @@ export async function retrieveRagContext(
   return {
     query,
     retrievalMode,
+    ...(filters ? { filters } : {}),
     citations: await rerankCitations(
       query,
       hybridCandidates.slice(0, topK),

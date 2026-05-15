@@ -25,6 +25,7 @@ If you are less technical, the short version is simpler: each page demonstrates 
 | `/agent` | 6 | A tool-using ReAct-style assistant with long-term memory. |
 | `/multi-agent` | 7 | Planner, research, verification, and report-writing agents working as a system. |
 | `/failure-patterns` | 8 | Before-and-after demos for six common agent failure modes. |
+| `/context-architecture` | 9 | Multi-source RAG with source-aware filtering, context packing, and persistent vs session context separation. |
 | `/guardrails` | 10 | Input screening, output validation, and human approval before a protected action. |
 | `/observability` | 11 | Braintrust-powered trace, token, latency, and cost visibility. |
 | `/token-economics` | 12 | Model pricing comparison plus cost-aware model routing. |
@@ -34,7 +35,6 @@ If you are less technical, the short version is simpler: each page demonstrates 
 
 | Objective | Planned area | Current status |
 | --- | --- | --- |
-| 9 | Context architecture | Planned as the multi-source extension of the retrieval stack. |
 | 13 | Fine-tuning | Planned as a narrow experiment, not the default runtime path. |
 | 15 | Deploy and ship | Repo narrative, demo polish, and public packaging are still in progress. |
 
@@ -188,6 +188,21 @@ Key details:
 - Generation scoring includes a source-line compliance check plus judge-based correctness, relevance, and hallucination-risk scores.
 - Each run is logged to Braintrust as an experiment with variant metadata so the results are traceable outside the UI.
 - The page includes a summary comparison table, per-variant scorecards, and weakest-case review panels for quick analysis.
+
+### Objective 9: Context Architecture
+
+Description: A source-aware extension of the ARC Raiders retrieval stack that separates persistent game knowledge from per-session task context and exposes filterable context packing.
+
+Key details:
+
+- Live route: `/context-architecture`
+- API routes: `/api/context-architecture` and `/api/context-architecture/measure`
+- Reuses the Objective 4 retrieval stack instead of building a second RAG app from scratch.
+- Keeps the canonical corpus limited to official docs and news, structured community item records, and derived patch-note change records.
+- Adds metadata-aware source, entity, topic, and date filters before hybrid ranking.
+- Separates persistent retrieved evidence from per-session task context in the final prompt so temporary instructions do not masquerade as facts.
+- Uses the existing Context Pack Assembler prompt contract to choose a smaller answer-time context pack inside an explicit token budget.
+- Includes a measurement panel that compares unfiltered versus source-scoped precision across representative ARC Raiders question types.
 
 ### Objective 6: Single Agent and Long-Term Memory
 

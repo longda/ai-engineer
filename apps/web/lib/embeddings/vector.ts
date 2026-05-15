@@ -70,13 +70,15 @@ export async function upsertChunks(
 
 export async function semanticSearchByVector(
   vector: number[],
-  topK = SEARCH_TOP_K
+  topK = SEARCH_TOP_K,
+  options: { filter?: string } = {}
 ) {
   const results = await getNamespace().query({
     vector,
     topK,
     includeMetadata: true,
     includeData: true,
+    ...(options.filter ? { filter: options.filter } : {}),
   });
 
   return results.map((result) => {

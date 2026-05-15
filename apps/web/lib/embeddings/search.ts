@@ -3,7 +3,11 @@ import { embed } from "@/lib/ai";
 import { EMBEDDING_MODEL_ID, SEARCH_TOP_K } from "./config";
 import { semanticSearchByVector } from "./vector";
 
-export async function runSemanticSearch(query: string, topK = SEARCH_TOP_K) {
+export async function runSemanticSearch(
+  query: string,
+  topK = SEARCH_TOP_K,
+  options: { filter?: string } = {}
+) {
   const trimmed = query.trim();
 
   if (!trimmed) {
@@ -15,5 +19,5 @@ export async function runSemanticSearch(query: string, topK = SEARCH_TOP_K) {
     value: trimmed,
   });
 
-  return semanticSearchByVector(embedding, topK);
+  return semanticSearchByVector(embedding, topK, options);
 }

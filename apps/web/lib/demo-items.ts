@@ -81,7 +81,8 @@ export const DEMO_ITEMS: DemoItem[] = [
     number: 9,
     title: "Context architecture",
     description: "Multi-source RAG with metadata filtering.",
-    status: "soon",
+    href: "/context-architecture",
+    status: "live",
   },
   {
     id: "guardrails",

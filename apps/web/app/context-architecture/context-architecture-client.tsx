@@ -8,7 +8,6 @@ import {
   FilterIcon,
   Layers3Icon,
   LoaderCircleIcon,
-  SearchIcon,
   SparklesIcon,
 } from "lucide-react";
 import {

@@ -6,7 +6,6 @@ import { readIndexedChunkCorpus } from "@/lib/embeddings/corpus-store";
 import type { RagCitation, RagRetrievalFilters, RagRetrievalMode } from "@/lib/rag/types";
 import {
   buildRagSystemPrompt,
-  RAG_CONTEXT_LIMIT,
   RAG_MODEL_ID,
   RAG_RETRIEVAL_TOP_K,
   retrieveRagContext,
